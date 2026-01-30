@@ -1,4 +1,21 @@
 #!/bin/bash
+# Final Aurora Shell Installer
+echo "🌌 Refreshing Aurora Shell..." | lolcat
+
+# Create the theme script
+cat << 'EOF' > ~/.aurora_theme.sh
+get_battery() { pmset -g batt | grep -Eo "\d+%" | head -1 || echo "100%"; }
+get_disk() { df -h / | awk 'NR==2 {print $4}'; }
+
+echo "AURORA SHELL PRO ACTIVE" | lolcat
+echo "📅 $(date +'%A, %B %d') | 🔋 $(get_battery) | 💽 $(get_disk) Free"
+export PROMPT="%F{cyan}🌌 Aurora %F{white}%n@%m: %f"
+EOF
+
+# Clean link to .zshrc
+grep -q "source ~/.aurora_theme.sh" ~/.zshrc || echo "source ~/.aurora_theme.sh" >> ~/.zshrc
+
+echo "✨ Clean installation complete! Please run 'source ~/.zshrc'"#!/bin/bash
 echo "🌌 Installing Aurora Shell Pro..."
 
 # Install lolcat for rainbow effects if missing

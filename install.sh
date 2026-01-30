@@ -1,4 +1,26 @@
 #!/bin/bash
+echo "🌌 Installing Aurora Shell Pro..."
+
+# Install lolcat for rainbow effects if missing
+if ! command -v lolcat &> /dev/null; then
+    echo "🌈 Adding rainbow support..."
+    brew install lolcat 2>/dev/null || sudo apt-get install lolcat -y 2>/dev/null
+fi
+
+# Add the high-tech prompt to .zshrc
+cat << 'EOF' > ~/.aurora_theme.sh
+get_battery() { pmset -g batt | grep -Eo "\d+%" | head -1 || echo "100%"; }
+get_disk() { df -h / | awk 'NR==2 {print $4}'; }
+
+echo "AURORA SHELL ACTIVE" | lolcat
+echo "📅 $(date +'%D') | 🔋 $(get_battery) | 💽 $(get_disk) Free"
+export PROMPT="%F{cyan}🌌 Aurora %F{white}%n@%m: %f"
+EOF
+
+# Ensure .zshrc loads the theme
+grep -q "source ~/.aurora_theme.sh" ~/.zshrc || echo "source ~/.aurora_theme.sh" >> ~/.zshrc
+
+echo "✨ Success! Restart your terminal to see the rainbow."#!/bin/bash
 # Aurora Shell - Official Installer
 
 echo "🌌 Installing Aurora Shell..."

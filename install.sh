@@ -1,4 +1,22 @@
 #!/bin/bash
+# Aurora Shell - Official Installer
+
+echo "🌌 Installing Aurora Shell..."
+
+# Create config directory
+mkdir -p ~/.aurora
+
+# Add the theme to .zshrc ONLY if it's not already there
+if ! grep -q "Aurora Shell Theme" ~/.zshrc; then
+cat << 'EOF' >> ~/.zshrc
+
+# --- Aurora Shell Theme ---
+export PROMPT="%F{cyan}🌌 Aurora %F{white}%n@%m: %f"
+EOF
+fi
+
+echo "✨ Aurora Shell installed successfully!"
+echo "🔄 Run 'source ~/.zshrc' to refresh your terminal."#!/bin/bash
 echo "🌌 Installing Aurora Shell..."
 
 # 1. Create the local config folder

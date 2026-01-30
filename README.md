@@ -2,7 +2,7 @@
 
 An elegant, animated Zsh theme featuring a shifting rainbow prompt, live system diagnostics, and high-fidelity ASCII art.
 
-## 🚀 Quick Install
+## 🚀 Quick Install        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.sh)"
 
 To install Aurora Shell automatically on your Mac, paste this into your terminal:
 

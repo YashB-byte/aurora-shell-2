@@ -2,12 +2,16 @@
 
 An elegant, animated Zsh theme featuring a shifting rainbow prompt, live system diagnostics, and high-fidelity ASCII art.
 
-## 🚀 Quick Install        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.sh)"
+## 🚀 Quick Install                   # This tells your terminal where to find 'brew'
+eval "$(/opt/homebrew/bin/brew shellenv)"
+
+# This installs the rainbow tool
+brew install lolcat
 
 To install Aurora Shell automatically on your Mac, paste this into your terminal:
 
 zsh
-```/bin/bash -c "$(curl -fsSL [https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.sh](https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.sh))"```
+```/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.sh)"```
 ✨ Features
 🌈 Shifting Rainbow Prompt: A marquee-style prompt that cycles through "Aurora" colors every time you run a command.
 

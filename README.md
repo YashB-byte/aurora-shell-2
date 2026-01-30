@@ -1,12 +1,8 @@
 # 🌌 Aurora Shell
 
-An elegant, animated Zsh theme featuring a shifting rainbow prompt, live system diagnostics, and high-fidelity ASCII art.
+An elegant, animated Zsh theme featuring a shifting rainbow prompt, live system diagnostics, and high-fidelity art.
 
-## 🚀 Quick Install                   # This tells your terminal where to find 'brew'
-eval "$(/opt/homebrew/bin/brew shellenv)"
-
-# This installs the rainbow tool
-brew install lolcat
+## 🚀 Quick Install
 
 To install Aurora Shell automatically on your Mac, paste this into your terminal:
 

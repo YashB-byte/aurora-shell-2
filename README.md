@@ -35,4 +35,10 @@ zsh/main.zsh: The logic engine (Battery, Disk, and Git functions).
 📄 License
 Distributed under the MIT License. Feel free to fork and customize!
 
+Instructions for Windows Powershell
+
+to get the aurora-shell use this command
+
+```Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('[https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.ps1](https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.ps1)'))```
+
 Proudly crafted by YashB-byte

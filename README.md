@@ -1,12 +1,12 @@
 # 🌌 Aurora Shell
 
-An elegant, animated Zsh theme featuring a shifting rainbow prompt, live system diagnostics, and high-fidelity ASCII art. Built for developers who want their terminal to look as good as their code.
+An elegant, animated Zsh theme featuring a shifting rainbow prompt, live system diagnostics, and high-fidelity ASCII art.
 
-## 🚀 Quick Install
+## 🚀 Quick Install (Mac/Linux)
 
-To install Aurora Shell automatically on your Mac, paste this into your terminal:
+Paste this into your terminal:
 
-```zsh /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.sh)" ```
+zsh ```/bin/bash -c "$(curl -fsSL [https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.sh](https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.sh))"```
 ✨ Features
 🌈 Shifting Rainbow Prompt: A marquee-style prompt that cycles through "Aurora" colors every time you run a command.
 
@@ -39,6 +39,6 @@ Instructions for Windows Powershell
 
 to get the aurora-shell use this command
 
-```Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('[https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.ps1](https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.ps1)'))```
+```Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('[https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.ps1](https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.ps1)'))```
 
 Proudly crafted by YashB-byte

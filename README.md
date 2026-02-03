@@ -40,6 +40,6 @@ Instructions for Windows Powershell
 
 to get the aurora-shell use this command
 
-```Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('[https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.ps1](https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.ps1)'))```
+```Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.ps1'))```
 
 Proudly crafted by YashB-byte

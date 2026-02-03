@@ -40,4 +40,4 @@ EOF
 # Ensure .zshrc loads the theme
 grep -q "source ~/.aurora_theme.sh" ~/.zshrc || echo "source ~/.aurora_theme.sh" >> ~/.zshrc
 
-echo "✨ Success! Please run 'source ~/.zshrc' on your VM."
+echo "✨ Success! Please run 'source ~/.zshrc' on your computer/VM."

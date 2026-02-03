@@ -1,13 +1,11 @@
-# Pure PowerShell script for Windows
+# install.ps1 - Pure PowerShell Version
 $ProfilePath = $PROFILE
-if (!(Test-Path -Path $ProfilePath)) { 
-    New-Item -ItemType File -Path $ProfilePath -Force 
-}
+if (!(Test-Path -Path $ProfilePath)) { New-Item -ItemType File -Path $ProfilePath -Force }
 
 $AuroraCode = @"
 function Get-AuroraStats {
     `$date = Get-Date -Format "MM/dd/yy"
-    # Windows-specific Hardware calls
+    # Hardware calls for Windows
     `$batt = (Get-CimInstance -ClassName Win32_Battery).EstimatedChargeRemaining
     if (!`$batt) { `$batt = "AC" } else { `$batt = "`$batt%" }
     `$disk = [math]::Round((Get-PSDrive C).Free / 1GB, 1)
@@ -19,8 +17,10 @@ function Get-AuroraStats {
     Write-Host " ------------------------------------------------------------"
 }
 
+# Run diagnostics at startup
 Get-AuroraStats
 
+# Custom Prompt Logic
 function prompt {
     Write-Host "🌌 Aurora " -ForegroundColor Cyan -NoNewline
     Write-Host "`$(`$env:USERNAME)@`$(`$env:COMPUTERNAME): " -ForegroundColor White -NoNewline
@@ -28,5 +28,6 @@ function prompt {
 }
 "@
 
+# Inject the code into your Windows Profile
 Set-Content -Path $ProfilePath -Value $AuroraCode
-Write-Host "✨ Success! Windows profile updated. Restart PowerShell." -ForegroundColor Green
+Write-Host "✨ Success! Your Windows Aurora Profile is ready. Restart PowerShell." -ForegroundColor Green

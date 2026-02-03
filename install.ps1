@@ -1,43 +1,32 @@
-#!/bin/bash
-echo "🌌 Deploying Aurora Shell with Block Art..."
-
-# This creates the theme file ON THE VM when the script runs
-# ... inside your install.sh file ...
-# ... update the ~/.aurora_theme.sh part to this ...
-cat << 'EOF' > ~/.aurora_theme.sh
-# Aurora Shell Official Banner
-echo "
- █████╗ ██╗   ██╗██████╗  ██████╗ ██████╗  █████╗ 
-██╔══██╗██║   ██║██╔══██╗██╔═══██╗██╔══██╗██╔══██╗
-███████║██║   ██║██████╔╝██║   ██║██████╔╝███████║
-██╔══██║██║   ██║██╔══██╗██║   ██║██╔══██╗██╔══██║
-██║  ██║╚██████╔╝██║  ██║╚██████╔╝██║  ██║██║  ██║
-╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝
-                                                  
-███████╗██╗  ██╗███████╗██╗     ██╗               
-██╔════╝██║  ██║██╔════╝██║     ██║               
-███████╗███████║█████╗  ██║     ██║               
-╚════██║██╔══██║██╔══╝  ██║     ██║               
-███████║██║  ██║███████╗███████╗███████╗          
-╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝          
-" | lolcat
-
-# Smarter Diagnostics
-get_battery() { 
-    if command -v pmset &> /dev/null; then 
-        pmset -g batt | grep -Eo "\d+%" | head -1
-    else 
-        echo "⚡ AC" # Shows 'AC' if battery info isn't available on VM
-    fi
+# Pure PowerShell script for Windows
+$ProfilePath = $PROFILE
+if (!(Test-Path -Path $ProfilePath)) { 
+    New-Item -ItemType File -Path $ProfilePath -Force 
 }
-get_disk() { df -h / | awk 'NR==2 {print $4}'; }
-get_cpu() { uptime | awk -F'load average:' '{ print $2 }' | cut -d',' -f1 | xargs; }
 
-echo "📅 $(date +'%D') | 🔋 $(get_battery) | 🧠 CPU: $(get_cpu) | 💽 $(get_disk) Free"
-export PROMPT="%F{cyan}🌌 Aurora %F{white}%n@%m: %f"
-EOF
+$AuroraCode = @"
+function Get-AuroraStats {
+    `$date = Get-Date -Format "MM/dd/yy"
+    # Windows-specific Hardware calls
+    `$batt = (Get-CimInstance -ClassName Win32_Battery).EstimatedChargeRemaining
+    if (!`$batt) { `$batt = "AC" } else { `$batt = "`$batt%" }
+    `$disk = [math]::Round((Get-PSDrive C).Free / 1GB, 1)
+    `$cpu = [math]::Round((Get-Counter '\Processor(_Total)\% Processor Time').CounterSamples.CookedValue, 1)
 
-# Ensure .zshrc loads the theme
-grep -q "source ~/.aurora_theme.sh" ~/.zshrc || echo "source ~/.aurora_theme.sh" >> ~/.zshrc
+    Write-Host ""
+    Write-Host " 🌌 AURORA SHELL ACTIVE (WINDOWS)" -ForegroundColor Cyan
+    Write-Host " 📅 `$date | 🔋 `$batt | 🧠 CPU: `$cpu% | 💽 `$(`$disk)Gi Free" -ForegroundColor Magenta
+    Write-Host " ------------------------------------------------------------"
+}
 
-echo "✨ Success! Please run 'source ~/.zshrc' on your computer/VM."
+Get-AuroraStats
+
+function prompt {
+    Write-Host "🌌 Aurora " -ForegroundColor Cyan -NoNewline
+    Write-Host "`$(`$env:USERNAME)@`$(`$env:COMPUTERNAME): " -ForegroundColor White -NoNewline
+    return "> "
+}
+"@
+
+Set-Content -Path $ProfilePath -Value $AuroraCode
+Write-Host "✨ Success! Windows profile updated. Restart PowerShell." -ForegroundColor Green

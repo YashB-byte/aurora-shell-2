@@ -2,6 +2,7 @@
 echo "🌌 Deploying Aurora Shell with Block Art..."
 
 # This creates the theme file ON THE VM when the script runs
+# ... inside your install.sh file ...
 cat << 'EOF' > ~/.aurora_theme.sh
 # Aurora Shell Official Banner
 echo "
@@ -23,7 +24,8 @@ echo "
 get_battery() { if [[ "$OSTYPE" == "darwin"* ]]; then pmset -g batt | grep -Eo "\d+%" | head -1; else echo "100%"; fi; }
 get_disk() { df -h / | awk 'NR==2 {print $4}'; }
 
-echo "📅 \$(date +'%D') | 🔋 \$(get_battery) | 💽 \$(get_disk) Free"
+# We use $(...) here so it executes every time you open a new terminal
+echo "📅 $(date +'%D') | 🔋 $(get_battery) | 💽 $(get_disk) Free"
 export PROMPT="%F{cyan}🌌 Aurora %F{white}%n@%m: %f"
 EOF
 

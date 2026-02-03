@@ -40,6 +40,6 @@ Instructions for Windows Powershell
 
 to get the aurora-shell use this command
 
-```Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.ps1'))```
+```Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.ps1'))``` then use ```Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force```
 
 Proudly crafted by YashB-byte

@@ -1,7 +1,14 @@
+# Get the profile path
 $ProfilePath = $PROFILE
+$ProfileDir = Split-Path -Parent $ProfilePath
+
+# 1. FORCE the directory to exist (Fixes the red error in image_fe7da3)
+if (!(Test-Path -Path $ProfileDir)) { 
+    New-Item -ItemType Directory -Path $ProfileDir -Force 
+}
 
 $AuroraCode = @"
-# Set output encoding to handle emojis correctly
+# Force UTF8 for Emojis
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 function Get-AuroraStats {
@@ -13,7 +20,7 @@ function Get-AuroraStats {
 
     Write-Host ""
     Write-Host " 🌌 AURORA SHELL ACTIVE (WINDOWS)" -ForegroundColor Cyan
-    # FIXED: Wrapped in double quotes and added -ForegroundColor to ensure it prints as text
+    # FIXED: Using Write-Host stops PowerShell from 'executing' the line
     Write-Host " 📅 `$date | 🔋 `$batt | 🧠 CPU: `$cpu% | 💽 `$(`$disk)Gi Free" -ForegroundColor Magenta
     Write-Host " ------------------------------------------------------------"
 }
@@ -27,6 +34,6 @@ function prompt {
 }
 "@
 
-# Save with UTF8 encoding specifically for Windows
+# 2. Save with UTF8 to fix those weird 'ðŸ' characters
 Set-Content -Path $ProfilePath -Value $AuroraCode -Encoding utf8
-Write-Host "✨ Clean build successful! Restart PowerShell." -ForegroundColor Green
+Write-Host "✨ Final build successful! Restart PowerShell." -ForegroundColor Green

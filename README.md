@@ -30,6 +30,7 @@ PowerShell
 ```Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.ps1'))```
 
 in zsh you will have to install lolcat using homebrew using the command ```brew install lolcat```
+
 🛠️ Customization
 The main configuration logic is stored in:
 

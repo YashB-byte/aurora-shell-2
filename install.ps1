@@ -2,17 +2,16 @@
 $ProfilePath = $PROFILE
 $ProfileDir = Split-Path -Parent $ProfilePath
 
-# 1. Force the folder to exist (Prevents the 'Path not found' error)
+# Force create the directory if it's missing (fixes the 'path not found' error)
 if (!(Test-Path -Path $ProfileDir)) { 
     New-Item -ItemType Directory -Path $ProfileDir -Force 
 }
 
-# 2. Define the Profile Script
 $AuroraCode = @"
-# Force UTF8 for clear Emoji rendering
+# Enable modern UTF8 encoding for Emojis
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
-# Capture session start time immediately
+# Capture the exact time this terminal session started
 `$sessionStart = Get-Date -Format "HH:mm:ss"
 
 function Get-AuroraStats {
@@ -31,16 +30,15 @@ function Get-AuroraStats {
 
     Write-Host ""
     Write-Host " 🌌 AURORA SHELL ACTIVE (WINDOWS)" -ForegroundColor Cyan
-    # Displaying the Date and the new Session Start Time
+    # The New Status Line with Session Start Time
     Write-Host " 📅 `$date | 🕒 Start: `$sessionStart | 🔋 `$battStr | 🧠 CPU: `$cpu%" -ForegroundColor Magenta
     Write-Host " 💽 `$disk Gi Free" -ForegroundColor Magenta
     Write-Host " ------------------------------------------------------------"
 }
 
-# Run diagnostics at startup
+# Run once on startup
 Get-AuroraStats
 
-# Custom Prompt
 function prompt {
     Write-Host " aurora " -ForegroundColor Cyan -NoNewline
     Write-Host "`$(`$env:USERNAME)@`$(`$env:COMPUTERNAME): " -ForegroundColor White -NoNewline
@@ -48,9 +46,7 @@ function prompt {
 }
 "@
 
-# 3. Save to profile with UTF8 encoding
+# Save with UTF8 encoding for those high-def icons
 Set-Content -Path $ProfilePath -Value $AuroraCode -Encoding utf8
 
-Write-Host ""
-Write-Host "✨ SUCCESS: Aurora Shell updated with Session Start time!" -ForegroundColor Green
-Write-Host "🚀 Restart PowerShell Preview to see the changes." -ForegroundColor Green
+Write-Host "✨ SUCCESS: Aurora Shell (Modern Edition) Installed!" -ForegroundColor Green

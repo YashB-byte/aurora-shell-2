@@ -1,27 +1,30 @@
-# Get the profile path
 $ProfilePath = $PROFILE
 $ProfileDir = Split-Path -Parent $ProfilePath
 
-# 1. FORCE the directory to exist (Fixes the red error in image_fe7da3)
-if (!(Test-Path -Path $ProfileDir)) { 
-    New-Item -ItemType Directory -Path $ProfileDir -Force 
-}
+if (!(Test-Path -Path $ProfileDir)) { New-Item -ItemType Directory -Path $ProfileDir -Force }
 
 $AuroraCode = @"
-# Force UTF8 for Emojis
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+# Force older PowerShell to handle UTF8
+if (`$PSVersionTable.PSVersion.Major -le 5) {
+    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+}
 
 function Get-AuroraStats {
     `$date = Get-Date -Format "MM/dd/yy"
-    `$batt = (Get-CimInstance -ClassName Win32_Battery).EstimatedChargeRemaining
-    if (!`$batt) { `$batt = "AC" } else { `$batt = "`$batt%" }
+    try {
+        `$batt = (Get-CimInstance -ClassName Win32_Battery).EstimatedChargeRemaining
+        `$battStr = if (`$batt) { "`$batt%" } else { "AC" }
+    } catch { `$battStr = "AC" }
+    
     `$disk = [math]::Round((Get-PSDrive C).Free / 1GB, 1)
-    `$cpu = [math]::Round((Get-Counter '\Processor(_Total)\% Processor Time').CounterSamples.CookedValue, 1)
+    `$cpu = [math]::Round((Get-Counter '\Processor(_Total)\% Processor Time' -ErrorAction SilentlyContinue).CounterSamples.CookedValue, 1)
+    if (!`$cpu) { `$cpu = "0" }
 
     Write-Host ""
-    Write-Host " 🌌 AURORA SHELL ACTIVE (WINDOWS)" -ForegroundColor Cyan
-    # FIXED: Using Write-Host stops PowerShell from 'executing' the line
-    Write-Host " 📅 `$date | 🔋 `$batt | 🧠 CPU: `$cpu% | 💽 `$(`$disk)Gi Free" -ForegroundColor Magenta
+    Write-Host " [ AURORA SHELL ACTIVE ] " -ForegroundColor Cyan
+    # Using a safer way to print that won't trigger 'Command Not Found' errors
+    `$statusLine = " 📅 `$date | 🔋 `$battStr | 🧠 CPU: `$cpu% | 💽 `$disk Gi Free"
+    Write-Host `$statusLine -ForegroundColor Magenta
     Write-Host " ------------------------------------------------------------"
 }
 
@@ -29,11 +32,11 @@ Get-AuroraStats
 
 function prompt {
     Write-Host " aurora " -ForegroundColor Cyan -NoNewline
-    Write-Host "`$(`$env:USERNAME)@`$(`$env:COMPUTERNAME): " -ForegroundColor White -NoNewline
+    Write-Host "`$env:USERNAME@`$env:COMPUTERNAME: " -ForegroundColor White -NoNewline
     return "> "
 }
 "@
 
-# 2. Save with UTF8 to fix those weird 'ðŸ' characters
-Set-Content -Path $ProfilePath -Value $AuroraCode -Encoding utf8
-Write-Host "✨ Final build successful! Restart PowerShell." -ForegroundColor Green
+# Save with UTF8 with BOM (Best for older Windows PowerShell compatibility)
+[System.IO.File]::WriteAllLines($ProfilePath, $AuroraCode)
+Write-Host "✨ Universal build successful! Restart PowerShell." -ForegroundColor Green

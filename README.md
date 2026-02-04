@@ -1,45 +1,38 @@
-# 🌌 Aurora Shell
+🌌 Aurora Shell 2.0
+A sleek, high-performance terminal theme and diagnostic dashboard for macOS (Zsh) and Windows (PowerShell 7+).
 
-An elegant, animated Zsh theme featuring a shifting rainbow prompt, live system diagnostics, and high-fidelity art.
-
-## 🚀 Quick Install
-
-To install Aurora Shell automatically on your Mac, paste this into your terminal:
-
-zsh
-```/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.sh)"```
 ✨ Features
-🌈 Shifting Rainbow Prompt: A marquee-style prompt that cycles through "Aurora" colors every time you run a command.
 
-📊 Live Dashboard: Real-time battery status and disk space monitoring displayed on startup.
+Real-time Diagnostics: View Battery, CPU usage, and Disk space every time you open a terminal.
 
-🎨 Animated ASCII Art: A professional Aurora logo powered by lolcat animations.
+Session Tracking: Displays a "Start Time" so you know exactly when you began your session.
 
-⚡ Pro-Developer Defaults: Built-in support for Syntax Highlighting (know if your command is right before hitting enter) and Autosuggestions (grey "ghost text" based on your history).
+Cross-Platform: Tailored experiences for both Mac and Windows environments.
 
-🛠️ Manual Requirements
-The installer handles these for you, but for reference:
+Ultra-Clean Prompt: Minimalist cyan-themed prompt showing user@machine.
 
-Zsh (Default on macOS)
+🚀 Installation
+🍎 For macOS (Zsh)
 
-Homebrew (Required for lolcat and plugins)
+Run the following command in your terminal:
 
-iTerm2 (Highly recommended for the best color rendering)
+Bash
+```curl -s https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.sh | bash```
+🪟 For Windows (PowerShell 7+)
 
-📂 Project Structure
-install.sh: The automated one-click installation script.
+[!IMPORTANT] This theme is designed for PowerShell 7.0 or higher (including PowerShell Preview). It is not compatible with the legacy "Windows PowerShell 5.1".
 
-zsh/theme.zsh: The visual engine (Logo, Prompt, and Colors).
+Open PowerShell 7 (or install it via ```winget install Microsoft.PowerShell```).
 
-zsh/main.zsh: The logic engine (Battery, Disk, and Git functions).
+Run the installer:
 
-📄 License
-Distributed under the MIT License. Feel free to fork and customize!
+PowerShell
+```Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.ps1'))```
 
-Instructions for Windows Powershell
 
-to get the aurora-shell use this command
+🛠️ Customization
+The main configuration logic is stored in:
 
-```Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.ps1'))``` then use ```Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force```
+Mac: ~/.aurora_theme.sh (sourced in your .zshrc)
 
-Proudly crafted by YashB-byte
+Windows: $PROFILE (usually located in Documents\PowerShell\Microsoft.PowerShell_profile.ps1)

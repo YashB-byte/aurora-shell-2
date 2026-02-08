@@ -43,7 +43,7 @@ function Get-AuroraStats {
 ╚════██║██╔══██║██╔══╝  ██║     ██║               
 ███████║██║  ██║███████╗███████╗███████╗          
 ╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝          
-" -ForegroundColor Cyan
+" -ForegroundColor Rainbow
     # The New Status Line with Session Start Time
     Write-Host " 📅 `$date | 🕒 Start: `$sessionStart | 🔋 `$battStr | 🧠 CPU: `$cpu%" -ForegroundColor Magenta
     Write-Host " 💽 `$disk Gi Free" -ForegroundColor Magenta

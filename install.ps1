@@ -29,7 +29,7 @@ function Get-AuroraStats {
     if (!`$cpu) { `$cpu = "0" }
 
     Write-Host ""
-    Write-Host " 🌌
+    Write-Host "
  █████╗ ██╗   ██╗██████╗  ██████╗ ██████╗  █████╗ 
 ██╔══██╗██║   ██║██╔══██╗██╔═══██╗██╔══██╗██╔══██╗
 ███████║██║   ██║██████╔╝██║   ██║██████╔╝███████║
@@ -54,7 +54,7 @@ function Get-AuroraStats {
 Get-AuroraStats
 
 function prompt {
-    Write-Host " aurora " -ForegroundColor Cyan -NoNewline
+    Write-Host " 🌌aurora " -ForegroundColor Cyan -NoNewline
     Write-Host "`$(`$env:USERNAME)@`$(`$env:COMPUTERNAME): " -ForegroundColor White -NoNewline
     return "> "
 }

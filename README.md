@@ -18,6 +18,7 @@ Run the following command in your terminal:
 
 Bash
 ```curl -s https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.sh | bash```
+
 🪟 For Windows (PowerShell 7+)
 
 [!IMPORTANT] This theme is designed for PowerShell 7.0 or higher (including PowerShell Preview). It is not compatible with the legacy "Windows PowerShell 5.1".

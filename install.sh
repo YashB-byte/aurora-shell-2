@@ -33,7 +33,7 @@ get_battery() {
 get_disk() { df -h / | awk 'NR==2 {print $4}'; }
 get_cpu() { uptime | awk -F'load average:' '{ print $2 }' | cut -d',' -f1 | xargs; }
 
-echo "📅 $(date +'%D') | 🔋 $(get_battery) | 🧠 CPU: $(get_cpu) | 💽 $(get_disk) Free"
+echo "📅 $(date +'%D') | 🔋 $(get_battery) | 🧠 CPU: $(get_cpu) | 💽 $(get_disk) Free" | lolcat
 export PROMPT="%F{cyan}🌌 Aurora %F{white}%n@%m: %f"
 EOF
 

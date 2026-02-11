@@ -31,16 +31,25 @@ curl -s https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install
 
 🪟 For Windows (PowerShell 7+)
 
-[!IMPORTANT] This theme is designed for PowerShell 7.0 or higher (including PowerShell Preview). It is not compatible with the legacy "Windows PowerShell 5.1".
+> [!IMPORTANT]
+> This theme requires PowerShell 7.0 or higher. It is not compatible with Windows PowerShell 5.1.
 
-Open PowerShell 7 (or install it via ```winget install Microsoft.PowerShell```).
+**Install PowerShell 7 (if needed):**
+```powershell
+winget install Microsoft.PowerShell
+```
 
-Run the installer:
+**Run the installer:**
+```powershell
+Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.ps1'))
+```
 
-PowerShell
-```Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.ps1'))```
+📦 **Dependencies**
 
-in zsh you will have to install lolcat using homebrew using the command ```brew install lolcat```
+macOS requires `lolcat` for colorful output:
+```bash
+brew install lolcat
+```
 
 🛠️ Customization
 The main configuration logic is stored in:

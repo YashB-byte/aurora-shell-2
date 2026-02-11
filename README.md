@@ -39,6 +39,11 @@ curl -s https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install
 winget install Microsoft.PowerShell
 ```
 
+Or for PowerShell Preview:
+```powershell
+winget install Microsoft.PowerShell.Preview
+```
+
 **Run the installer:**
 ```powershell
 Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.ps1'))

@@ -32,7 +32,7 @@ curl -s https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install
 🪟 For Windows (PowerShell 7+)
 
 > [!IMPORTANT]
-> This theme requires PowerShell 7.0 or higher. It is not compatible with Windows PowerShell 5.1.
+> This theme requires Microsoft PowerShell 7.0 or higher. It is not compatible with Microsoft Windows PowerShell 5.1.
 
 **Install PowerShell 7 (if needed):**
 ```powershell

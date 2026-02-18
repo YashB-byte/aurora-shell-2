@@ -15,7 +15,7 @@ Ultra-Clean Prompt: Minimalist cyan-themed prompt showing user@machine.
 🍎 For macOS (Zsh)
 
 **Option 1: Download Installer (.dmg)**
-1. Download [AuroraShell-2.0.0.dmg](https://github.com/YashB-byte/aurora-shell-2/releases/latest)
+1. Download [AuroraShell-2.0.0.dmg](https://github.com/YashB-byte/aurora-shell-2/releases/download/v2.0.0/AuroraShell-2.0.0.dmg)
 2. Open the .dmg file
 3. Open Terminal and run:
    ```bash

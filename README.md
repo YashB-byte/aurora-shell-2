@@ -17,13 +17,14 @@ Ultra-Clean Prompt: Minimalist cyan-themed prompt showing user@machine.
 **Option 1: Download Installer (.dmg)**
 1. Download [AuroraShell-2.0.0.dmg](https://github.com/YashB-byte/aurora-shell-2/releases/latest)
 2. Open the .dmg file
-3. move the package to your downloads folder
-4. Open Terminal and run:
+3. Open Terminal and run:
    ```bash
+   cp /Volumes/Aurora*/AuroraShell.pkg ~/Downloads/AuroraShell.pkg
    xattr -d com.apple.quarantine ~/Downloads/AuroraShell.pkg
+   open ~/Downloads/AuroraShell.pkg
    ```
-5. Double-click `AuroraShell.pkg` to install
-6. Restart your terminal
+4. Follow the installer prompts
+5. Restart your terminal
 
 **Option 2: Command Line Install**
 ```bash

@@ -4,8 +4,14 @@ on: [push, workflow_dispatch]
 jobs:
   build:
     runs-on: windows-latest
+    # This ensures all 'run' commands happen in the correct folder
+    defaults:
+      run:
+        working-directory: aurora-app/aurora-app
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -14,7 +20,6 @@ jobs:
 
       - name: Install & Build
         run: |
-          cd aurora-app/aurora-app
           npm install
           npm run build-win
           

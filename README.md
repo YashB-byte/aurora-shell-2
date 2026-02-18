@@ -63,3 +63,10 @@ The main configuration logic is stored in:
 Mac: ~/.aurora_theme.sh (sourced in your .zshrc)
 
 Windows: $PROFILE (usually located in Documents\PowerShell\Microsoft.PowerShell_profile.ps1)
+
+🗑️ Uninstall
+
+To remove Aurora Shell:
+```bash
+curl -s https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/uninstall.sh | bash
+```

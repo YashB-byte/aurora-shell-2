@@ -12,19 +12,24 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
+          cache: 'npm' # Speeds up future builds
 
       - name: Build EXE
         run: |
-          # This command finds the correct folder and runs the build inside it
-          Get-ChildItem -Recurse -Filter "package.json" | Where-Object { $_.DirectoryName -match "aurora-app" } | ForEach-Object {
-            cd $_.DirectoryName
-            npm install
-            npm run build-win
-          }
+          # 1. Find the folder with package.json
+          $targetDir = Get-ChildItem -Recurse -Filter "package.json" | 
+                       Where-Object { $_.DirectoryName -match "aurora-app" } | 
+                       Select-Object -First 1 -ExpandProperty DirectoryName
+          
+          Write-Host "Building in: $targetDir"
+          cd $targetDir
+          
+          # 2. Install and use npx to run pkg (more reliable than npm run)
+          npm install
+          npx pkg . --targets node16-win-x64 --out-path dist --no-bytecode --public
           
       - name: Upload Finished EXE
         uses: actions/upload-artifact@v4
         with:
           name: Aurora-Windows-Installer
-          # This search pattern finds the exe wherever it was built
           path: "**/dist/*.exe"

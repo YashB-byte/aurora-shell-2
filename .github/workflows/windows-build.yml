@@ -12,19 +12,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: 'npm' # Speeds up future builds
 
       - name: Build EXE
+        # We target the specific folder relative to the repo root
+        working-directory: aurora-app/aurora-app
         run: |
-          # 1. Find the folder with package.json
-          $targetDir = Get-ChildItem -Recurse -Filter "package.json" | 
-                       Where-Object { $_.DirectoryName -match "aurora-app" } | 
-                       Select-Object -First 1 -ExpandProperty DirectoryName
-          
-          Write-Host "Building in: $targetDir"
-          cd $targetDir
-          
-          # 2. Install and use npx to run pkg (more reliable than npm run)
           npm install
           npx pkg . --targets node16-win-x64 --out-path dist --no-bytecode --public
           
@@ -32,4 +24,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Aurora-Windows-Installer
-          path: "**/dist/*.exe"
+          # This tells GitHub to look specifically in that dist folder
+          path: aurora-app/aurora-app/dist/*.exe

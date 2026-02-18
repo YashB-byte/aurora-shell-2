@@ -4,27 +4,27 @@ on: [push, workflow_dispatch]
 jobs:
   build:
     runs-on: windows-latest
-    # This ensures all 'run' commands happen in the correct folder
-    defaults:
-      run:
-        working-directory: aurora-app/aurora-app
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
 
-      - name: Install & Build
+      - name: Build EXE
         run: |
-          npm install
-          npm run build-win
+          # This command finds the correct folder and runs the build inside it
+          Get-ChildItem -Recurse -Filter "package.json" | Where-Object { $_.DirectoryName -match "aurora-app" } | ForEach-Object {
+            cd $_.DirectoryName
+            npm install
+            npm run build-win
+          }
           
       - name: Upload Finished EXE
         uses: actions/upload-artifact@v4
         with:
           name: Aurora-Windows-Installer
-          path: aurora-app/aurora-app/dist/*.exe
+          # This search pattern finds the exe wherever it was built
+          path: "**/dist/*.exe"

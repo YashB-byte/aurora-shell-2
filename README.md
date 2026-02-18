@@ -46,11 +46,13 @@ Or for PowerShell Preview:
 winget install Microsoft.PowerShell.Preview
 ```
 
-**Run the installer:**
+**Option 1: command line install**
 ```powershell
 Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.ps1'))
 ```
 
+**Option 2: download installer (.exe)**
+1. download [Aurora-Windows-Installer](https://github.com/YashB-byte/aurora-shell-2/actions/runs/22123544117)
 📦 **Dependencies**
 
 macOS requires `lolcat` for colorful output:

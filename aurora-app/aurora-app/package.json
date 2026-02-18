@@ -1,16 +1,10 @@
 {
   "name": "aurora-app",
-  "version": "1.0.0",
-  "description": "",
+  "version": "2.0.0.0",
+  "description": "Aurora Shell 2.0 Windows Installer",
   "main": "index.js",
+  "bin": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "devDependencies": {
-    "pkg": "^5.8.1"
-  }
+  "build-win": "pkg . --targets node16-win-x64 --out-path dist --no-bytecode --public"
+}
 }

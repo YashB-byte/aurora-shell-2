@@ -66,7 +66,7 @@ Windows: $PROFILE (usually located in Documents\PowerShell\Microsoft.PowerShell_
 
 🗑️ Uninstall
 
-To remove Aurora Shell:
+To remove Aurora Shell on MacOS:
 ```bash
 curl -s https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/uninstall.sh | bash
 ```

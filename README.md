@@ -53,6 +53,7 @@ Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.We
 
 **Option 2: download installer (.exe)**
 1. download [Aurora-Windows-Installer](https://github.com/YashB-byte/aurora-shell-2/actions/runs/22124998917/artifacts/5549593896)
+2. 
 📦 **Dependencies**
 
 macOS requires `lolcat` for colorful output:

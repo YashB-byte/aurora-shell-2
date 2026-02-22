@@ -74,3 +74,4 @@ To remove Aurora Shell on MacOS:
 ```bash
 curl -s https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/uninstall.sh | bash
 ```
+ 

@@ -1,28 +1,9 @@
-name: Build and Release Aurora Shell
-
-on:
-  push:
-    tags:
-      - 'v*' # Triggers only when you push a tag like v2.0, v2.1, etc.
-    branches:
-      - main
-    paths-ignore:
-      - 'README.md'
-
-jobs:
-  release:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      # [Insert your build steps here for .exe and .dmg]
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            path/to/your/AuroraShell-2.0.0.dmg
-            path/to/your/Aurora-Windows-Installer.exe
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+- name: Create GitHub Release
+  uses: softprops/action-gh-release@v1
+  with:
+    tag_name: ${{ github.ref_name }}  # This explicitly tells the action to use the tag you just pushed
+    files: |
+      path/to/your/AuroraShell-2.0.0.dmg
+      path/to/your/Aurora-Windows-Installer.exe
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

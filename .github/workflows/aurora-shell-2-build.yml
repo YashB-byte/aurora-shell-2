@@ -1,19 +1,20 @@
-name: Build and Release Aurora Shell
+name: Aurora Shell Multi-Platform Build & Release
 
+# Triggered when a new version tag (like v2.0.0.1) is pushed
 on:
   push:
     tags:
-      - 'v*' # Triggers on v2.0.0, v2.1.0, etc.
+      - 'v*' 
 
 permissions:
-  contents: write # Essential for creating the Release and uploading files
+  contents: write # Allows the bot to create/edit releases
 
 jobs:
   build:
-    name: Build (${{ matrix.os }})
+    name: Build Aurora on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false # Ensures if one OS fails, the other still finishes
+      fail-fast: false # One OS failing won't stop the other
       matrix:
         include:
           - os: windows-latest
@@ -22,43 +23,47 @@ jobs:
             artifact_name: AuroraShell-2.0.0.dmg
 
     steps:
-      - name: Checkout Code
+      - name: 📥 Checkout Repository
         uses: actions/checkout@v4
 
-      # --- WINDOWS BUILD STEP ---
-      - name: Build Windows Installer
+      # --- WINDOWS BUILD ---
+      - name: 🪟 Build Windows Binary
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
-          # Copy your specific build command here if you have a build.ps1
-          Write-Host "Building Windows Executable..."
-          # This creates a placeholder if your build command isn't set yet
-          if (!(Test-Path "aurora-app.exe")) { New-Item -Path "aurora-app.exe" -ItemType "file" -Value "Aurora Windows Binary" }
-          
-      # --- MACOS BUILD STEP ---
-      - name: Build macOS Package and DMG
+          Write-Host "Starting Windows Build..."
+          # Insert your specific build command here
+          # If no command is run, we ensure a file exists to avoid upload errors
+          if (!(Test-Path "aurora-app.exe")) { 
+            "Aurora Shell Windows Binary" | Out-File -FilePath "aurora-app.exe" 
+          }
+
+      # --- MACOS BUILD ---
+      - name: 🍎 Build macOS Package & DMG
         if: matrix.os == 'macos-latest'
         run: |
-          # 1. Create the .pkg
+          # 1. Create the .pkg installer
           pkgbuild --root . \
                    --identifier com.aurora.shell \
-                   --version 2.0.0 \
+                   --version 2.0.0.1 \
                    --install-location /usr/local/bin/aurora \
                    AuroraShell.pkg
 
-          # 2. Wrap the .pkg inside a DMG
-          hdiutil create -volname "Aurora Shell 2.0.0" \
+          # 2. Wrap the .pkg into a downloadable DMG
+          hdiutil create -volname "Aurora Shell 2.0.0.1" \
                          -srcfolder ./AuroraShell.pkg \
                          -ov -format UDZO \
                          AuroraShell-2.0.0.dmg
 
-      # --- RELEASE STEP ---
-      - name: Upload to GitHub Release
+      # --- DEPLOYMENT ---
+      - name: 🚀 Upload Assets to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          # fail_on_unmatched_files: false prevents the Windows job from 
-          # crashing because it can't find the Mac .dmg (and vice versa)
-          fail_on_unmatched_files: false 
+          name: Aurora Shell ${{ github.ref_name }} # e.g., v2.0.0.1
+          body: "Automated release for tag ${{ github.ref_name }}. Includes workflow clarity updates."
+          fail_on_unmatched_files: false
           files: |
             aurora-app.exe
             AuroraShell-2.0.0.dmg
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

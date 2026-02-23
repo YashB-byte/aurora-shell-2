@@ -1,33 +1,59 @@
-name: Build and Release
+name: Build and Release Aurora Shell
+
 on:
   push:
     tags:
-      - 'v*' # Triggers when you push a tag like v2.0.1
+      - 'v*' # Triggers on v2.0.0, v2.1.0, etc.
 
 jobs:
   build:
-    name: Build for ${{ matrix.os }}
+    name: Build (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
           - os: windows-latest
             artifact_name: aurora-app.exe
-            build_command: ./build-windows.sh # Replace with your actual command
           - os: macos-latest
             artifact_name: AuroraShell-2.0.0.dmg
-            build_command: ./build-mac.sh # Replace with your actual command
 
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Run Build
-        run: ${{ matrix.build_command }}
+      # --- WINDOWS BUILD STEP ---
+      - name: Build Windows Installer
+        if: matrix.os == 'windows-latest'
+        run: |
+          # Replace the line below with your actual Windows build command
+          # Example: ./build-windows.ps1
+          echo "Building Windows Executable..."
+          # For now, this assumes your process creates aurora-app.exe in the root
+          
+      # --- MACOS BUILD STEP ---
+      - name: Build macOS Package and DMG
+        if: matrix.os == 'macos-latest'
+        run: |
+          # 1. Create the .pkg
+          # Note: Replace '.' with the specific folder containing your scripts if needed
+          pkgbuild --root . \
+                   --identifier com.aurora.shell \
+                   --version 2.0.0 \
+                   --install-location /usr/local/bin \
+                   AuroraShell.pkg
 
-      - name: Upload to Release
+          # 2. Wrap the .pkg inside a DMG
+          hdiutil create -volname "Aurora Shell 2.0.0" \
+                         -srcfolder ./AuroraShell.pkg \
+                         -ov -format UDZO \
+                         AuroraShell-2.0.0.dmg
+
+      # --- RELEASE STEP ---
+      - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: build/${{ matrix.artifact_name }}
+          files: |
+            aurora-app.exe
+            AuroraShell-2.0.0.dmg
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

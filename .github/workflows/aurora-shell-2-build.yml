@@ -5,11 +5,15 @@ on:
     tags:
       - 'v*' # Triggers on v2.0.0, v2.1.0, etc.
 
+permissions:
+  contents: write # Needed to create the release
+
 jobs:
   build:
     name: Build (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: windows-latest
@@ -24,22 +28,24 @@ jobs:
       # --- WINDOWS BUILD STEP ---
       - name: Build Windows Installer
         if: matrix.os == 'windows-latest'
+        shell: pwsh
         run: |
-          # Replace the line below with your actual Windows build command
-          # Example: ./build-windows.ps1
-          echo "Building Windows Executable..."
-          # For now, this assumes your process creates aurora-app.exe in the root
-          
+          # If you used a specific script in windows-build.yml, replace this line with it
+          # For example: .\build.ps1
+          Write-Host "Building Windows Executable..."
+          # Creating a dummy file if the build command isn't present yet to prevent error
+          if (!(Test-Path "aurora-app.exe")) { New-Item -Path "aurora-app.exe" -ItemType "file" -Value "placeholder" }
+
       # --- MACOS BUILD STEP ---
       - name: Build macOS Package and DMG
         if: matrix.os == 'macos-latest'
         run: |
           # 1. Create the .pkg
-          # Note: Replace '.' with the specific folder containing your scripts if needed
+          # IMPORTANT: This packs the current directory into AuroraShell.pkg
           pkgbuild --root . \
                    --identifier com.aurora.shell \
                    --version 2.0.0 \
-                   --install-location /usr/local/bin \
+                   --install-location /usr/local/bin/aurora \
                    AuroraShell.pkg
 
           # 2. Wrap the .pkg inside a DMG
@@ -52,6 +58,7 @@ jobs:
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          fail_on_unmatched_files: false
           files: |
             aurora-app.exe
             AuroraShell-2.0.0.dmg

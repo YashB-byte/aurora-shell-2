@@ -1,29 +1,33 @@
-
-name: Build Aurora Windows App
-on: [push, workflow_dispatch]
+name: Build and Release
+on:
+  push:
+    tags:
+      - 'v*' # Triggers when you push a tag like v2.0.1
 
 jobs:
   build:
-    runs-on: windows-latest
+    name: Build for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            artifact_name: aurora-app.exe
+            build_command: ./build-windows.sh # Replace with your actual command
+          - os: macos-latest
+            artifact_name: AuroraShell-2.0.0.dmg
+            build_command: ./build-mac.sh # Replace with your actual command
+
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
+      - name: Run Build
+        run: ${{ matrix.build_command }}
 
-      - name: Build EXE
-        # We target the specific folder relative to the repo root
-        working-directory: aurora-app/aurora-app
-        run: |
-          npm install
-          npx pkg . --targets node16-win-x64 --out-path dist --no-bytecode --public
-          
-      - name: Upload Finished EXE
-        uses: actions/upload-artifact@v4
+      - name: Upload to Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: Aurora-Windows-Installer
-          # This tells GitHub to look specifically in that dist folder
-          path: aurora-app/aurora-app/dist/*.exe
+          files: build/${{ matrix.artifact_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

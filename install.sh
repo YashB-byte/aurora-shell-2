@@ -1,10 +1,25 @@
 #!/bin/bash
-echo "🌌 Deploying Aurora Shell with Block Art..."
+set -e # Exit if any command fails
 
-# This creates the theme file ON THE VM when the script runs
-# ... inside your install.sh file ...
-# ... update the ~/.aurora_theme.sh part to this ...
-cat << 'EOF' > ~/.aurora_theme.sh
+echo -e "\033[0;36m🌌 Starting Aurora Shell Lazy Deployment...\033[0m"
+
+# 1. Pull the latest repo (The Lazy Shortcut)
+REPO_URL="https://github.com/YashB-byte/aurora-shell-2.git"
+INSTALL_PATH="$HOME/.aurora-shell"
+TEMP_PATH="/tmp/aurora-tmp"
+
+rm -rf "$TEMP_PATH"
+echo "📥 Fetching latest files from GitHub..."
+git clone "$REPO_URL" "$TEMP_PATH"
+
+# 2. Setup directory
+mkdir -p "$INSTALL_PATH"
+cp -rf "$TEMP_PATH"/* "$INSTALL_PATH/"
+rm -rf "$TEMP_PATH"
+
+# 3. Create the Theme File (The Logic you provided)
+echo "🎨 Writing Theme and Block Art..."
+cat << 'EOF' > "$INSTALL_PATH/aurora_theme.sh"
 # Aurora Shell Official Banner
 echo "
  █████╗ ██╗   ██╗██████╗  ██████╗ ██████╗  █████╗ 
@@ -22,12 +37,11 @@ echo "
 ╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝          
 " | lolcat
 
-# Smarter Diagnostics
 get_battery() { 
     if command -v pmset &> /dev/null; then 
         pmset -g batt | grep -Eo "\d+%" | head -1
     else 
-        echo "⚡ AC" # Shows 'AC' if battery info isn't available on VM
+        echo "⚡ AC" 
     fi
 }
 get_disk() { df -h / | awk 'NR==2 {print $4}'; }
@@ -38,7 +52,9 @@ echo "---------------------------------------------------" | lolcat
 export PROMPT="%F{cyan}🌌 Aurora %F{white}%n@%m: %f"
 EOF
 
-# Ensure .zshrc loads the theme
-grep -q "source ~/.aurora_theme.sh" ~/.zshrc || echo "source ~/.aurora_theme.sh" >> ~/.zshrc
+# 4. Link it to .zshrc
+ZSH_CONFIG="$HOME/.zshrc"
+grep -q "source $INSTALL_PATH/aurora_theme.sh" "$ZSH_CONFIG" || echo "source $INSTALL_PATH/aurora_theme.sh" >> "$ZSH_CONFIG"
 
-echo "✨ Success! Please run 'source ~/.zshrc' on your computer/VM."
+echo -e "\033[0;32m✨ Success! Aurora Shell is deployed.\033[0m"
+echo "👉 Run 'source ~/.zshrc' or restart your terminal to see the magic."

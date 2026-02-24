@@ -2,47 +2,45 @@ name: Aurora Shell Multi-Platform Build
 
 on:
   push:
+    branches:
+      - main
     tags:
       - 'v*'
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
   build:
-    name: Build on ${{ matrix.os }}
+    name: Build Aurora
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false
       matrix:
         os: [windows-latest, macos-latest]
 
     steps:
-      - name: 📥 Checkout Repository
+      - name: 📥 Checkout
         uses: actions/checkout@v4
 
-      - name: 🪟 Build Windows (PowerShell)
+      - name: 🪟 Build Windows
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
-          $TagName = "${{ github.ref_name }}"
-          $FileName = "AuroraShell-$TagName.exe"
-          # This creates the dynamic exe name you wanted
-          "Aurora Shell Windows Binary" | Out-File -FilePath $FileName
+          $FileName = "AuroraShell-Windows.exe"
+          "Aurora Shell Installer" | Out-File -FilePath $FileName
           Write-Host "Created $FileName"
 
-      - name: 🍎 Build macOS (DMG)
+      - name: 🍎 Build macOS
         if: matrix.os == 'macos-latest'
         run: |
-          TAG_NAME="${{ github.ref_name }}"
-          pkgbuild --root . --identifier com.aurora.shell --version "$TAG_NAME" --install-location /usr/local/bin/aurora AuroraShell.pkg
-          hdiutil create -volname "Aurora Shell $TAG_NAME" -srcfolder ./AuroraShell.pkg -ov -format UDZO "AuroraShell-${TAG_NAME}.dmg"
+          pkgbuild --root . --identifier com.aurora.shell --version "1.0" --install-location /usr/local/bin/aurora AuroraShell.pkg
+          hdiutil create -volname "Aurora Shell" -srcfolder ./AuroraShell.pkg -ov -format UDZO "AuroraShell-Mac.dmg"
 
-      - name: 🚀 Upload to Release
+      - name: 🚀 Release
         uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
         with:
-          name: Aurora Shell ${{ github.ref_name }}
-          fail_on_unmatched_files: false
           files: |
             *.exe
             *.dmg

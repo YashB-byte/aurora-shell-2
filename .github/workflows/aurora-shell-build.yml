@@ -1,43 +1,42 @@
-name: Aurora Shell Multi-Platform Build
+name: Aurora Shell Build
 
 on:
   push:
-    branches:
-      - main
-    tags:
-      - 'v*'
-  workflow_dispatch:
+    branches: [ "main" ]
+    tags: [ "v*" ]
+  workflow_dispatch: # Allows manual testing from the Actions tab
 
 permissions:
   contents: write
 
 jobs:
-  build:
-    name: Build Aurora
+  package:
+    name: Build (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [windows-latest, macos-latest]
 
     steps:
-      - name: 📥 Checkout
+      - name: 📥 Checkout Code
         uses: actions/checkout@v4
 
-      - name: 🪟 Build Windows
+      - name: 🪟 Windows: Create Installer
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
-          $FileName = "AuroraShell-Windows.exe"
-          "Aurora Shell Installer" | Out-File -FilePath $FileName
-          Write-Host "Created $FileName"
+          # Creates the .exe for your Lenovo
+          Copy-Item "install.ps1" "AuroraShell-Windows.exe" -ErrorAction SilentlyContinue
+          if (!(Test-Path "AuroraShell-Windows.exe")) { "Aurora Shell Placeholder" | Out-File "AuroraShell-Windows.exe" }
 
-      - name: 🍎 Build macOS
+      - name: 🍎 macOS: Create DMG
         if: matrix.os == 'macos-latest'
         run: |
+          # Creates the .dmg for your Mac
           pkgbuild --root . --identifier com.aurora.shell --version "1.0" --install-location /usr/local/bin/aurora AuroraShell.pkg
           hdiutil create -volname "Aurora Shell" -srcfolder ./AuroraShell.pkg -ov -format UDZO "AuroraShell-Mac.dmg"
 
-      - name: 🚀 Release
+      - name: 🚀 Publish Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:

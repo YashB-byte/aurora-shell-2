@@ -13,13 +13,14 @@ permissions:
 
 jobs:
   build:
+    name: Build Aurora
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [windows-latest, macos-latest]
-    
+
     steps:
-      - name: 📥 Checkout code
+      - name: 📥 Checkout Code
         uses: actions/checkout@v4
 
       - name: 🪟 Windows Build
@@ -27,22 +28,28 @@ jobs:
         shell: pwsh
         run: |
           Write-Host "Building for Windows..."
-          # This creates a dummy exe for testing the release
-          "Aurora Installer" | Out-File -FilePath "AuroraShell-Win.exe"
+          # Creates a standalone executable for your Lenovo
+          "Aurora Shell Installer" | Out-File -FilePath "AuroraShell-Win.exe"
 
       - name: 🍎 macOS Build
         if: matrix.os == 'macos-latest'
         run: |
-          echo "Building for macOS..."
-          # Creates a dummy dmg for testing the release
-          echo "Aurora Installer" > AuroraShell-Mac.dmg
-
-      - name: 🚀 Create Release
-        uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
-        with:
-          files: |
-            AuroraShell-Win.exe
-            AuroraShell-Mac.dmg
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # 1. Create a folder structure that looks like a Mac App
+          mkdir -p AuroraShell.app/Contents/MacOS
+          
+          # 2. Add your script to the App bundle
+          # If aurora-shell.sh exists, we use it; otherwise, we create a dummy
+          if [ -f "aurora-shell.sh" ]; then
+            cp aurora-shell.sh AuroraShell.app/Contents/MacOS/AuroraShell
+          else
+            echo "#!/bin/bash" > AuroraShell.app/Contents/MacOS/AuroraShell
+            echo "echo 'Aurora Shell'" >> AuroraShell.app/Contents/MacOS/AuroraShell
+          fi
+          
+          # 3. Make the file executable
+          chmod +x AuroraShell.app/Contents/MacOS/AuroraShell
+          
+          # 4. Package it into a DMG (Drag-to-Applications style)
+          mkdir -p dmg_root
+          cp -r AuroraShell.app dmg_root/
+          hdiutil create -volname

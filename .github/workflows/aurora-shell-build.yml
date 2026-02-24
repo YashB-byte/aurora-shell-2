@@ -2,10 +2,8 @@ name: Aurora Shell Build
 
 on:
   push:
-    branches:
-      - main
-    tags:
-      - 'v*'
+    branches: [ main ]
+    tags: [ 'v*' ]
   workflow_dispatch:
 
 permissions:
@@ -23,44 +21,43 @@ jobs:
       - name: 📥 Checkout Code
         uses: actions/checkout@v4
 
-      - name: 🪟 Windows Build
+      - name: 🪟 Windows Build (PowerShell)
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
-          Write-Host "Building for Windows..."
-          # Creates the installer for your Lenovo
-          "Aurora Shell Installer" | Out-File -FilePath "AuroraShell-Win.exe"
+          mkdir "Aurora-Shell-Windows"
+          # 1. Copy your theme/setup script
+          if (Test-Path "aurora-theme.ps1") {
+            Copy-Item "aurora-theme.ps1" "Aurora-Shell-Windows/install.ps1"
+          } else {
+            "'Aurora Shell Loaded'" | Out-File "Aurora-Shell-Windows/install.ps1"
+          }
+          
+          # 2. Add a simple Batch launcher so you don't have to deal with Execution Policies
+          $launcher = "@echo off`npowershell -ExecutionPolicy Bypass -File ./install.ps1`npause"
+          $launcher | Out-File "Aurora-Shell-Windows/RunMe.bat" -Encoding ascii
+          
+          # 3. Create Zip
+          Compress-Archive -Path "Aurora-Shell-Windows" -DestinationPath "AuroraShell-Win.zip"
 
-      - name: 🍎 macOS Build
+      - name: 🍎 macOS Build (Zsh)
         if: matrix.os == 'macos-latest'
         run: |
-          # 1. Create a folder structure for a Mac App
-          mkdir -p "AuroraShell.app/Contents/MacOS"
-          
-          # 2. Add your script (using a fallback if file is missing)
+          mkdir -p "Aurora-Shell-Mac"
           if [ -f "aurora-shell.sh" ]; then
-            cp "aurora-shell.sh" "AuroraShell.app/Contents/MacOS/AuroraShell"
+            cp "aurora-shell.sh" "Aurora-Shell-Mac/install.sh"
           else
-            echo "#!/bin/bash" > "AuroraShell.app/Contents/MacOS/AuroraShell"
-            echo "echo 'Aurora Shell'" >> "AuroraShell.app/Contents/MacOS/AuroraShell"
+            echo "echo 'Aurora Shell'" > "Aurora-Shell-Mac/install.sh"
           fi
-          
-          # 3. Make it runnable
-          chmod +x "AuroraShell.app/Contents/MacOS/AuroraShell"
-          
-          # 4. Prepare the folder to be turned into a DMG
-          mkdir -p "dmg_root"
-          cp -r "AuroraShell.app" "dmg_root/"
-          
-          # 5. Create the DMG (FIXED COMMAND ORDER)
-          hdiutil create -ov -volname "Aurora Shell" -srcfolder "dmg_root" -format UDZO "AuroraShell-Mac.dmg"
+          chmod +x "Aurora-Shell-Mac/install.sh"
+          hdiutil create -ov -volname "Aurora Shell" -srcfolder "Aurora-Shell-Mac" -format UDZO "AuroraShell-Mac.dmg"
 
       - name: 🚀 Create Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
-            AuroraShell-Win.exe
+            AuroraShell-Win.zip
             AuroraShell-Mac.dmg
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

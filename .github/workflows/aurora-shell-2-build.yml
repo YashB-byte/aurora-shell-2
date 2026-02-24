@@ -28,12 +28,17 @@ jobs:
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
-          # If you have a specific build command, add it here.
-          # Otherwise, this ensures an exe exists for the upload.
-          if (!(Test-Path "aurora-app.exe")) { 
-            "Aurora Shell Windows Binary" | Out-File -FilePath "aurora-app.exe" 
-          }
-
+          $TagName = "${{ github.ref_name }}"
+          $FileName = "AuroraShell-$TagName.exe"
+          
+          Write-Host "Creating $FileName..."
+          
+          # Replace the line below with your actual build command if you have one
+          # Example: ./build-windows.ps1 -Output $FileName
+          
+          # For now, we ensure the file exists with the correct dynamic name
+          "Aurora Shell Windows Binary" | Out-File -FilePath $FileName
+          
       # --- MACOS BUILD STEP ---
       - name: 🍎 Build macOS Package & DMG
         if: matrix.os == 'macos-latest'
@@ -57,13 +62,10 @@ jobs:
       - name: 🚀 Upload Assets to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          # This name appears as the Release Title on GitHub
           name: Aurora Shell ${{ github.ref_name }}
-          draft: false
-          prerelease: false
           fail_on_unmatched_files: false
           files: |
-            aurora-app.exe
+            *.exe
             *.dmg
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

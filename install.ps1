@@ -1,13 +1,20 @@
-# Get the modern PowerShell profile path
-$ProfilePath = $PROFILE
-$ProfileDir = Split-Path -Parent $ProfilePath
+# Aurora Shell - Windows Modern Installer
+$ErrorActionPreference = "Stop"
 
-# Force create the directory if it's missing (fixes the 'path not found' error)
-if (!(Test-Path -Path $ProfileDir)) { 
-    New-Item -ItemType Directory -Path $ProfileDir -Force 
-}
+try {
+    Write-Host "🌌 Deploying Aurora Shell Logic..." -ForegroundColor Cyan
 
-$AuroraCode = @"
+    # 1. Get the modern PowerShell profile path
+    $ProfilePath = $PROFILE
+    $ProfileDir = Split-Path -Parent $ProfilePath
+
+    # 2. Force create the directory if it's missing
+    if (!(Test-Path -Path $ProfileDir)) { 
+        New-Item -ItemType Directory -Path $ProfileDir -Force | Out-Null
+    }
+
+    # 3. The Theme Code
+    $AuroraCode = @"
 # Enable modern UTF8 encoding for Emojis
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
@@ -19,7 +26,7 @@ function Get-AuroraStats {
     
     # Battery Check
     try {
-        `$batt = (Get-CimInstance -ClassName Win32_Battery).EstimatedChargeRemaining
+        `$batt = (Get-CimInstance -ClassName Win32_Battery -ErrorAction SilentlyContinue).EstimatedChargeRemaining
         `$battStr = if (`$batt) { "`$batt%" } else { "AC" }
     } catch { `$battStr = "AC" }
 
@@ -44,7 +51,7 @@ function Get-AuroraStats {
 ███████║██║  ██║███████╗███████╗███████╗          
 ╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝          
 " -ForegroundColor Green
-    # The New Status Line with Session Start Time
+
     Write-Host " 📅 `$date | 🕒 Start: `$sessionStart | 🔋 `$battStr | 🧠 CPU: `$cpu%" -ForegroundColor Magenta
     Write-Host " 💽 `$disk Gi Free" -ForegroundColor Magenta
     Write-Host " ------------------------------------------------------------"
@@ -60,7 +67,14 @@ function prompt {
 }
 "@
 
-# Save with UTF8 encoding for those high-def icons
-Set-Content -Path $ProfilePath -Value $AuroraCode -Encoding utf8
+    # 4. Save the profile
+    Set-Content -Path $ProfilePath -Value $AuroraCode -Encoding utf8
+    Write-Host "✨ SUCCESS: Aurora Shell Installed to $ProfilePath" -ForegroundColor Green
 
-Write-Host "✨ SUCCESS: Aurora Shell (Modern Edition) Installed!" -ForegroundColor Green
+} catch {
+    Write-Host "❌ FAILED: $($_.Exception.Message)" -ForegroundColor Red
+}
+
+# The Magic Pause (keeps the window open on your Lenovo)
+Write-Host "`n"
+Read-Host -Prompt "Press Enter to exit installer"

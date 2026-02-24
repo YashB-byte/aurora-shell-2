@@ -1,26 +1,23 @@
 name: Aurora Shell Multi-Platform Build & Release
 
-# Triggered when a new version tag (like v2.0.0.1) is pushed
 on:
   push:
     tags:
       - 'v*' 
 
 permissions:
-  contents: write # Allows the bot to create/edit releases
+  contents: write
 
 jobs:
   build:
     name: Build Aurora on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false # One OS failing won't stop the other
+      fail-fast: false 
       matrix:
         include:
           - os: windows-latest
-            artifact_name: aurora-app.exe
           - os: macos-latest
-            artifact_name: AuroraShell-2.0.0.dmg
 
     steps:
       - name: 📥 Checkout Repository
@@ -31,39 +28,42 @@ jobs:
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
-          Write-Host "Starting Windows Build..."
-          # Insert your specific build command here
-          # If no command is run, we ensure a file exists to avoid upload errors
+          # If you have a specific build command, add it here.
+          # Otherwise, this ensures an exe exists for the upload.
           if (!(Test-Path "aurora-app.exe")) { 
             "Aurora Shell Windows Binary" | Out-File -FilePath "aurora-app.exe" 
           }
 
-      # --- MACOS BUILD ---
+      # --- MACOS BUILD STEP ---
       - name: 🍎 Build macOS Package & DMG
         if: matrix.os == 'macos-latest'
         run: |
-          # 1. Create the .pkg installer
+          TAG_NAME="${{ github.ref_name }}"
+          
+          # 1. Create the .pkg
           pkgbuild --root . \
                    --identifier com.aurora.shell \
-                   --version 2.0.0.1 \
+                   --version "$TAG_NAME" \
                    --install-location /usr/local/bin/aurora \
                    AuroraShell.pkg
 
-          # 2. Wrap the .pkg into a downloadable DMG
-          hdiutil create -volname "Aurora Shell 2.0.0.1" \
+          # 2. Wrap it in a DMG with the dynamic tag name
+          hdiutil create -volname "Aurora Shell $TAG_NAME" \
                          -srcfolder ./AuroraShell.pkg \
                          -ov -format UDZO \
-                         AuroraShell-2.0.0.dmg
+                         "AuroraShell-${TAG_NAME}.dmg"
 
-      # --- DEPLOYMENT ---
+      # --- RELEASE STEP ---
       - name: 🚀 Upload Assets to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: Aurora Shell ${{ github.ref_name }} # e.g., v2.0.0.1
-          body: "Automated release for tag ${{ github.ref_name }}. Includes workflow clarity updates."
+          # This name appears as the Release Title on GitHub
+          name: Aurora Shell ${{ github.ref_name }}
+          draft: false
+          prerelease: false
           fail_on_unmatched_files: false
           files: |
             aurora-app.exe
-            AuroraShell-2.0.0.dmg
+            *.dmg
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

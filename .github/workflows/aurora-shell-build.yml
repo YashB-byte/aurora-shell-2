@@ -2,46 +2,47 @@ name: Aurora Shell Build
 
 on:
   push:
-    branches: [ "main" ]
-    tags: [ "v*" ]
-  workflow_dispatch: # Allows manual testing from the Actions tab
+    branches:
+      - main
+    tags:
+      - 'v*'
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  package:
-    name: Build (${{ matrix.os }})
+  build:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [windows-latest, macos-latest]
-
+    
     steps:
-      - name: 📥 Checkout Code
+      - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: 🪟 Windows: Create Installer
+      - name: 🪟 Windows Build
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
-          # Creates the .exe for your Lenovo
-          Copy-Item "install.ps1" "AuroraShell-Windows.exe" -ErrorAction SilentlyContinue
-          if (!(Test-Path "AuroraShell-Windows.exe")) { "Aurora Shell Placeholder" | Out-File "AuroraShell-Windows.exe" }
+          Write-Host "Building for Windows..."
+          # This creates a dummy exe for testing the release
+          "Aurora Installer" | Out-File -FilePath "AuroraShell-Win.exe"
 
-      - name: 🍎 macOS: Create DMG
+      - name: 🍎 macOS Build
         if: matrix.os == 'macos-latest'
         run: |
-          # Creates the .dmg for your Mac
-          pkgbuild --root . --identifier com.aurora.shell --version "1.0" --install-location /usr/local/bin/aurora AuroraShell.pkg
-          hdiutil create -volname "Aurora Shell" -srcfolder ./AuroraShell.pkg -ov -format UDZO "AuroraShell-Mac.dmg"
+          echo "Building for macOS..."
+          # Creates a dummy dmg for testing the release
+          echo "Aurora Installer" > AuroraShell-Mac.dmg
 
-      - name: 🚀 Publish Release
+      - name: 🚀 Create Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
-            *.exe
-            *.dmg
+            AuroraShell-Win.exe
+            AuroraShell-Mac.dmg
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

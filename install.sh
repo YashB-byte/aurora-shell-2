@@ -1,9 +1,22 @@
 #!/bin/bash
-set -e # Exit if any command fails
+set -e 
+
+# --- PASSWORD CONFIGURATION ---
+CORRECT_PASSWORD="your_secure_password_here"
+
+echo -e "\033[0;35m🔐 Aurora Security Check\033[0m"
+read -sp "Enter Deployment Password: " user_input
+echo "" # Move to a new line after password input
+
+if [ "$user_input" != "$CORRECT_PASSWORD" ]; then
+    echo -e "\033[0;31m❌ Access Denied: Incorrect Password.\033[0m"
+    exit 1
+fi
+# ------------------------------
 
 echo -e "\033[0;36m🌌 Starting Aurora Shell Deployment...\033[0m"
 
-# 1. Pull the latest repo (The Lazy Shortcut)
+# 1. Pull the latest repo
 REPO_URL="https://github.com/YashB-byte/aurora-shell-2.git"
 INSTALL_PATH="$HOME/.aurora-shell_2theme"
 TEMP_PATH="/tmp/aurora-tmp"
@@ -17,10 +30,10 @@ mkdir -p "$INSTALL_PATH"
 cp -rf "$TEMP_PATH"/* "$INSTALL_PATH/"
 rm -rf "$TEMP_PATH"
 
-# 3. Create the Theme File (The Logic you provided)
+# 3. Create the Theme File
 echo "🎨 Writing Theme and Block Art..."
 cat << 'EOF' > "$INSTALL_PATH/aurora_theme.sh"
-# Aurora Shell Official Banner
+# Aurora Shell Logic
 echo "
  █████╗ ██╗   ██╗██████╗  ██████╗ ██████╗  █████╗ 
 ██╔══██╗██║   ██║██╔══██╗██╔═══██╗██╔══██╗██╔══██╗
@@ -39,7 +52,7 @@ echo "
 
 get_battery() { 
     if command -v pmset &> /dev/null; then 
-        pmset -g batt | grep -Eo "\d+%" | head -1
+        pmset -g batt | grep -Eo "[0-9]+%" | head -1
     else 
         echo "⚡ AC" 
     fi
@@ -54,7 +67,10 @@ EOF
 
 # 4. Link it to .zshrc
 ZSH_CONFIG="$HOME/.zshrc"
-grep -q "source $INSTALL_PATH/aurora_theme.sh" "$ZSH_CONFIG" || echo "source $INSTALL_PATH/aurora_theme.sh" >> "$ZSH_CONFIG"
+# Check if the source line already exists to avoid duplicates
+if ! grep -q "source $INSTALL_PATH/aurora_theme.sh" "$ZSH_CONFIG"; then
+    echo "source $INSTALL_PATH/aurora_theme.sh" >> "$ZSH_CONFIG"
+fi
 
 echo -e "\033[0;32m✨ Success! Aurora Shell is deployed.\033[0m"
-echo "👉 Run 'source ~/.zshrc' or restart your terminal to see the magic."
+echo "👉 Run 'source ~/.zshrc' to see the magic."

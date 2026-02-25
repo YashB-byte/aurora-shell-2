@@ -18,7 +18,7 @@ rm -rf "$TEMP_PATH"
 echo "🎨 Installing Terminal Lock and Theme..."
 
 # --- GENERATE THE THEME FILE ---
-# Note: Ensure 'EOF' is at the very start of the line with no spaces
+# CRITICAL: The word EOF at the bottom must have NO spaces before it.
 cat << 'EOF' > "$INSTALL_PATH/aurora_theme.sh"
 # 1. THE LOCK SYSTEM
 CORRECT_PASSWORD="my-real-password-123"
@@ -26,7 +26,7 @@ CORRECT_PASSWORD="my-real-password-123"
 echo -e "\033[0;35m🔐 Aurora Terminal Lock\033[0m"
 
 while true; do
-    # Correct ZSH/Bash compatible secret read
+    # ZSH vs Bash password prompt
     if [ -n "$ZSH_VERSION" ]; then
         read -rs "?Enter Terminal Password: " user_input </dev/tty
     else
@@ -55,7 +55,7 @@ aurora_stats() {
     echo "---------------------------------------------------"
 }
 
-# 3. THE LOGO
+# 3. THE LOGO (Simplified for reliability)
 echo "
  █████╗ ██╗   ██╗██████╗  ██████╗ ██████╗  █████╗ 
 ██╔══██╗██║   ██║██╔══██╗██╔═══██╗██╔══██╗██╔══██╗
@@ -69,7 +69,7 @@ echo "
 ███████╗███████║█████╗  ██║     ██║               
 ╚════██║██╔══██║██╔══╝  ██║     ██║               
 ███████║██║  ██║███████╗███████╗███████╗          
-╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝          
+╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝
 " | lolcat
 
 precmd() { aurora_stats }

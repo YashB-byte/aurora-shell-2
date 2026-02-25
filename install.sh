@@ -1,21 +1,18 @@
 #!/bin/bash
 set -e 
 
-# 1. SET YOUR PASSWORD HERE
-CORRECT_PASSWORD="YOUR_SECRET_HERE"
-
-echo -e "\033[0;35m🔐 Aurora Security Check\033[0m"
-
-# 2. THE FIX: </dev/tty forces the script to wait for your keyboard
-read -sp "Enter Deployment Password: " user_input </dev/tty
-echo "" 
-
-if [ "$user_input" != "$CORRECT_PASSWORD" ]; then
-    echo -e "\033[0;31m❌ Access Denied: Incorrect Password.\033[0m"
-    exit 1
+# Check if we are running in a Terminal or a Script
+if [ -t 0 ]; then
+    echo -e "\033[0;35m🔐 Aurora Security Check\033[0m"
+    read -sp "Enter Deployment Password: " user_input </dev/tty
+    echo "" 
+    if [ "$user_input" != "$CORRECT_PASSWORD" ]; then
+        echo -e "\033[0;31m❌ Access Denied.\033[0m"
+        exit 1
+    fi
+else
+    echo "🤖 Automated environment detected. Skipping password check."
 fi
-
-echo -e "\033[0;36m🌌 Starting Aurora Shell Deployment...\033[0m"
 
 # --- REST OF YOUR INSTALL LOGIC ---
 REPO_URL="https://github.com"

@@ -2,12 +2,11 @@
 set -e # Exit if any command fails
 
 # --- PASSWORD CONFIGURATION ---
-# Replace 'your_secure_password_here' with your actual password!
 CORRECT_PASSWORD="your_secure_password_here"
 
 echo -e "\033[0;35m🔐 Aurora Security Check\033[0m"
-# -s hides the input, -p provides the prompt
-read -sp "Enter Deployment Password: " user_input
+# ADDING </dev/tty allows it to work when piped from curl
+read -sp "Enter Deployment Password: " user_input </dev/tty
 echo "" 
 
 if [ "$user_input" != "$CORRECT_PASSWORD" ]; then
@@ -15,6 +14,7 @@ if [ "$user_input" != "$CORRECT_PASSWORD" ]; then
     exit 1
 fi
 # ------------------------------
+
 
 echo -e "\033[0;36m🌌 Starting Aurora Shell Deployment...\033[0m"
 

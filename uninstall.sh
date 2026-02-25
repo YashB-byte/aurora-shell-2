@@ -10,7 +10,7 @@ fi
 
 # Remove from .zshrc
 if [ -f "$HOME/.zshrc" ]; then
-    sed -i.bak '/source ~/.aurora_theme.sh/d' "$HOME/.zshrc"
+    sed -i.bak '/source ~/.aurora-shell/aurora_theme.sh/d' "$HOME/.zshrc"
     echo "✓ Removed Aurora Shell from ~/.zshrc"
 fi
 

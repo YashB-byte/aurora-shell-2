@@ -3,8 +3,8 @@
 echo "🌌 Uninstalling Aurora Shell..."
 
 # Remove theme file
-if [ -f "$HOME/.aurora_theme.sh" ]; then
-    rm "$HOME/.aurora_theme.sh"
+if [ -f "$HOME/.aurora-shell/aurora_theme.sh" ]; then
+    rm "$HOME/.aurora-shell/aurora_theme.sh"
     echo "✓ Removed ~/.aurora_theme.sh"
 fi
 

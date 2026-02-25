@@ -1,12 +1,13 @@
 #!/bin/bash
-set -e 
+set -e # Exit if any command fails
 
 # --- PASSWORD CONFIGURATION ---
+# Change "aurora2026" to whatever password you want to use
 CORRECT_PASSWORD="your_secure_password_here"
 
 echo -e "\033[0;35m🔐 Aurora Security Check\033[0m"
 read -sp "Enter Deployment Password: " user_input
-echo "" # Move to a new line after password input
+echo "" 
 
 if [ "$user_input" != "$CORRECT_PASSWORD" ]; then
     echo -e "\033[0;31m❌ Access Denied: Incorrect Password.\033[0m"
@@ -17,7 +18,7 @@ fi
 echo -e "\033[0;36m🌌 Starting Aurora Shell Deployment...\033[0m"
 
 # 1. Pull the latest repo
-REPO_URL="https://github.com/YashB-byte/aurora-shell-2.git"
+REPO_URL="https://github.com"
 INSTALL_PATH="$HOME/.aurora-shell_2theme"
 TEMP_PATH="/tmp/aurora-tmp"
 
@@ -33,7 +34,7 @@ rm -rf "$TEMP_PATH"
 # 3. Create the Theme File
 echo "🎨 Writing Theme and Block Art..."
 cat << 'EOF' > "$INSTALL_PATH/aurora_theme.sh"
-# Aurora Shell Logic
+# Aurora Shell Official Banner
 echo "
  █████╗ ██╗   ██╗██████╗  ██████╗ ██████╗  █████╗ 
 ██╔══██╗██║   ██║██╔══██╗██╔═══██╗██╔══██╗██╔══██╗
@@ -67,10 +68,9 @@ EOF
 
 # 4. Link it to .zshrc
 ZSH_CONFIG="$HOME/.zshrc"
-# Check if the source line already exists to avoid duplicates
 if ! grep -q "source $INSTALL_PATH/aurora_theme.sh" "$ZSH_CONFIG"; then
     echo "source $INSTALL_PATH/aurora_theme.sh" >> "$ZSH_CONFIG"
 fi
 
 echo -e "\033[0;32m✨ Success! Aurora Shell is deployed.\033[0m"
-echo "👉 Run 'source ~/.zshrc' to see the magic."
+echo "👉 Run 'source ~/.zshrc' or restart your terminal to see the magic."

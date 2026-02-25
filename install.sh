@@ -6,7 +6,7 @@ REPO_URL="https://github.com/YashB-byte/aurora-shell-2.git"
 INSTALL_PATH="$HOME/.aurora-shell_2theme"
 TEMP_PATH="/tmp/aurora-tmp"
 
-# --- CLEAN AND CLONE (No password needed to install) ---
+# --- INSTALLATION (No password needed to install) ---
 rm -rf "$TEMP_PATH"
 echo "📥 Fetching Aurora files..."
 git clone "$REPO_URL" "$TEMP_PATH"
@@ -17,26 +17,27 @@ rm -rf "$TEMP_PATH"
 
 echo "🎨 Installing Terminal Lock and Theme..."
 
-# --- GENERATE THE THEME FILE (This locks the terminal on launch) ---
+# --- GENERATE THE THEME FILE ---
 cat << 'EOF' > "$INSTALL_PATH/aurora_theme.sh"
 # 1. THE LOCK SYSTEM
 CORRECT_PASSWORD="my-real-password-123"
 
 echo -e "\033[0;35m🔐 Aurora Terminal Lock\033[0m"
-# Disables Ctrl+C during password prompt so they can't bypass it
-trap '' SIGINT SIGTSTP 
 
-read -rsp "Enter Terminal Password: " user_input </dev/tty
-echo "" 
+# Loop until the correct password is entered
+while true; do
+    read -rsp "Enter Terminal Password: " user_input </dev/tty
+    echo "" 
 
-# Re-enable Ctrl+C after prompt
-trap - SIGINT SIGTSTP
-
-if [ "$(echo "$user_input" | xargs)" != "$CORRECT_PASSWORD" ]; then
-    echo -e "\033[0;31m❌ Access Denied. Closing session...\033[0m"
-    sleep 1
-    exit 1
-fi
+    if [ "$(echo "$user_input" | xargs)" = "$CORRECT_PASSWORD" ]; then
+        echo -e "\033[0;32m✅ Access Granted.\033[0m"
+        break
+    else
+        echo -e "\033[0;31m❌ Access Denied. Closing session...\033[0m"
+        sleep 1
+        exit 1
+    fi
+done
 
 # 2. SYSTEM STATS (Shows only after login)
 aurora_stats() {
@@ -46,34 +47,4 @@ aurora_stats() {
     local disk_free=$(df -h / | awk 'NR==2 {print $4}')
 
     echo -e "\033[0;36m📅 $date_val | 🔋 $battery | 🧠 CPU: $cpu_load | 💽 $disk_free Free\033[0m"
-    echo "---------------------------------------------------"
-}
-
-# The ASCII Logo
-echo "
- █████╗ ██╗   ██╗██████╗  ██████╗ ██████╗  █████╗ 
-██╔══██╗██║   ██║██╔══██╗██╔═══██╗██╔══██╗██╔══██╗
-███████║██║   ██║██████╔╝██║   ██║██████╔╝███████║
-██╔══██║██║   ██║██╔══██╗██║   ██║██╔══██╗██╔══██║
-██║  ██║╚██████╔╝██║  ██║╚██████╔╝██║  ██║██║  ██║
-╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝
-                                                  
-███████╗██╗  ██╗███████╗██╗     ██╗               
-██╔════╝██║  ██║██╔════╝██║     ██║               
-███████╗███████║█████╗  ██║     ██║               
-╚════██║██╔══██║██╔══╝  ██║     ██║               
-███████║██║  ██║███████╗███████╗███████╗          
-╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝          
-" | lolcat
-
-precmd() { aurora_stats }
-export PROMPT="%F{cyan}🌌 Aurora %F{white}%n@%m: %f"
-EOF
-
-# --- UPDATE ZSHRC ---
-ZSH_CONFIG="$HOME/.zshrc"
-if ! grep -q "source $INSTALL_PATH/aurora_theme.sh" "$ZSH_CONFIG"; then
-    echo "source $INSTALL_PATH/aurora_theme.sh" >> "$ZSH_CONFIG"
-fi
-
-echo -e "\033[0;32m✨ Success! Aurora is installed and Terminal is now locked.\033[0m"
+    echo "--------------------------------

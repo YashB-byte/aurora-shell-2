@@ -2,10 +2,11 @@
 set -e # Exit if any command fails
 
 # --- PASSWORD CONFIGURATION ---
-# Change "aurora2026" to whatever password you want to use
+# Replace 'your_secure_password_here' with your actual password!
 CORRECT_PASSWORD="your_secure_password_here"
 
 echo -e "\033[0;35m🔐 Aurora Security Check\033[0m"
+# -s hides the input, -p provides the prompt
 read -sp "Enter Deployment Password: " user_input
 echo "" 
 
@@ -68,6 +69,7 @@ EOF
 
 # 4. Link it to .zshrc
 ZSH_CONFIG="$HOME/.zshrc"
+# Only add the source line if it's not already there
 if ! grep -q "source $INSTALL_PATH/aurora_theme.sh" "$ZSH_CONFIG"; then
     echo "source $INSTALL_PATH/aurora_theme.sh" >> "$ZSH_CONFIG"
 fi

@@ -2,23 +2,33 @@
 
 echo "🌌 Uninstalling Aurora Shell..."
 
-# 1. Remove the theme file and its directory if it's empty
-if [ -f "$HOME/.aurora-shell/aurora_theme.sh" ]; then
-    rm "$HOME/.aurora-shell/aurora_theme.sh"
-    echo "✓ Removed ~/.aurora-shell/aurora_theme.sh"
+# 1. Define paths
+AURORA_DIR="$HOME/.aurora-shell"
+THEME_FILE="$AURORA_DIR/aurora_theme.sh"
+ZSHRC="$HOME/.zshrc"
+
+# 2. Remove the theme file if it exists
+if [ -f "$THEME_FILE" ]; then
+    rm "$THEME_FILE"
+    echo "✓ Removed $THEME_FILE"
 fi
 
-# Clean up the directory if it exists and is now empty
-if [ -d "$HOME/.aurora-shell" ]; then
-    rmdir "$HOME/.aurora-shell" 2>/dev/null
+# 3. Remove the directory if it exists
+if [ -d "$AURORA_DIR" ]; then
+    rm -rf "$AURORA_DIR"
+    echo "✓ Removed $AURORA_DIR"
 fi
 
-# 2. Remove the line from .zshrc
-if [ -f "$HOME/.zshrc" ]; then
-    # We use '|' as a delimiter so the slashes in the path don't break sed.
-    # The -i '' syntax is specific to macOS to edit in-place without a backup.
-    sed -i '' '\|source ~/.aurora-shell/aurora_theme.sh|d' "$HOME/.zshrc"
-    echo "✓ Removed Aurora Shell from ~/.zshrc"
+# 4. Remove the line from .zshrc safely for both Mac and Linux
+if [ -f "$ZSHRC" ]; then
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # macOS version of sed
+        sed -i '' '/aurora_theme.sh/d' "$ZSHRC"
+    else
+        # Linux version of sed
+        sed -i '/aurora_theme.sh/d' "$ZSHRC"
+    fi
+    echo "✓ Removed Aurora Shell source line from $ZSHRC"
 fi
 
-echo "✅ Aurora Shell uninstalled! Restart your terminal."
+echo "✅ Aurora Shell uninstalled! Restart your terminal or run: source ~/.zshrc"

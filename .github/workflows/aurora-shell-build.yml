@@ -21,12 +21,13 @@ jobs:
       - name: 📥 Checkout Code
         uses: actions/checkout@v4
 
-      - name: 🪟 Windows Build (PowerShell)
+      - name: 🪟 Windows Build (PowerShell Profile)
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
           mkdir "Aurora-Win"
           $psContent = @'
+          # Aurora Shell for Windows PowerShell
           Write-Host "
            █████╗ ██╗   ██╗██████╗  ██████╗ ██████╗  █████╗ 
           ██╔══██╗██║   ██║██╔══██╗██╔═══██╗██╔══██╗██╔══██╗
@@ -42,20 +43,31 @@ jobs:
           ███████║██║  ██║███████╗███████╗███████╗          
           ╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝          
           " -ForegroundColor Cyan
-          # (Your PowerShell profile logic goes here)
+
+          function prompt { 
+              Write-Host "🌌 Aurora " -NoNewline -ForegroundColor Cyan
+              Write-Host "$($env:USERNAME)@$($env:COMPUTERNAME): " -NoNewline -ForegroundColor White
+              return " " 
+          }
           '@ 
           $psContent | Out-File "Aurora-Win/install.ps1"
           "@echo off`npowershell -ExecutionPolicy Bypass -File ./install.ps1`npause" | Out-File "Aurora-Win/RunMe.bat" -Encoding ascii
           Compress-Archive -Path "Aurora-Win" -DestinationPath "AuroraShell-Windows.zip"
 
-      - name: 🍎 macOS Build (Zsh)
+      - name: 🍎 macOS Build (Professional PKG)
         if: matrix.os == 'macos-latest'
         run: |
-          mkdir -p "Aurora-Mac"
-          cat <<'EOF' > "Aurora-Mac/install.sh"
+          mkdir -p scripts empty_payload dmg_root
+          
+          # 1. Create the postinstall script
+          cat <<'EOF' > scripts/postinstall
           #!/bin/bash
-          # 1. Define the theme file content
-          cat <<'INNER' > ~/.aurora_theme.sh
+          # Determine the actual user (not root) to find the correct home directory
+          USER_HOME=$(eval echo "~${USER}")
+          THEME_FILE="$USER_HOME/.aurora_theme.sh"
+          ZSHRC="$USER_HOME/.zshrc"
+
+          cat <<'INNER' > "$THEME_FILE"
           echo "
            █████╗ ██╗   ██╗██████╗  ██████╗ ██████╗  █████╗ 
           ██╔══██╗██║   ██║██╔══██╗██╔═══██╗██╔══██╗██╔══██╗
@@ -78,18 +90,28 @@ jobs:
           get_disk() { df -h / | awk 'NR==2 {print $4}'; }
           get_cpu() { uptime | awk -F'load averages: ' '{ print $2 }' | cut -d' ' -f1; }
 
-          echo "📅 $(date +'%D') | 🔋 \$(get_battery) | 🧠 CPU: \$(get_cpu) | 💽 \$(get_disk) Free" | lolcat
+          echo "📅 \$(date +'%D') | 🔋 \$(get_battery) | 🧠 CPU: \$(get_cpu) | 💽 \$(get_disk) Free" | lolcat
           echo "--------------------------------------------------" | lolcat
           export PROMPT="%F{cyan}🌌 Aurora %F{white}%n@%m: %f"
           INNER
 
-          # 2. Add source line to .zshrc
-          grep -qxF 'source ~/.aurora_theme.sh' ~/.zshrc || echo 'source ~/.aurora_theme.sh' >> ~/.zshrc
-          echo "Installation complete. Please restart your terminal."
+          chown ${USER} "$THEME_FILE"
+          grep -qxF "source $THEME_FILE" "$ZSHRC" || echo "source $THEME_FILE" >> "$ZSHRC"
+          exit 0
           EOF
-          
-          chmod +x "Aurora-Mac/install.sh"
-          zip -j AuroraShell-MacOS.zip Aurora-Mac/install.sh
+
+          chmod +x scripts/postinstall
+
+          # 2. Build the PKG
+          pkgbuild --identifier "com.aurora.shell" \
+                   --version "1.0" \
+                   --scripts scripts \
+                   --root empty_payload \
+                   "AuroraShell.pkg"
+
+          # 3. Wrap in DMG
+          cp "AuroraShell.pkg" dmg_root/
+          hdiutil create -ov -volname "Aurora Shell Installer" -srcfolder dmg_root -format UDZO "AuroraShell-Mac.dmg"
 
       - name: 🚀 Create Release
         uses: softprops/action-gh-release@v2
@@ -97,6 +119,6 @@ jobs:
         with:
           files: |
             AuroraShell-Windows.zip
-            AuroraShell-MacOS.zip
+            AuroraShell-Mac.dmg
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

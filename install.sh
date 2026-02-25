@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e # Exit if any command fails
 
-echo -e "\033[0;36m🌌 Starting Aurora Shell Lazy Deployment...\033[0m"
+echo -e "\033[0;36m🌌 Starting Aurora Shell Deployment...\033[0m"
 
 # 1. Pull the latest repo (The Lazy Shortcut)
 REPO_URL="https://github.com/YashB-byte/aurora-shell-2.git"

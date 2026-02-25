@@ -5,7 +5,7 @@ echo -e "\033[0;36m🌌 Starting Aurora Shell Deployment...\033[0m"
 
 # 1. Pull the latest repo (The Lazy Shortcut)
 REPO_URL="https://github.com/YashB-byte/aurora-shell-2.git"
-INSTALL_PATH="$HOME/.aurora-shell"
+INSTALL_PATH="$HOME/.aurora-shell_2theme"
 TEMP_PATH="/tmp/aurora-tmp"
 
 rm -rf "$TEMP_PATH"

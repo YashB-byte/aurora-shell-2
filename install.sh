@@ -3,7 +3,6 @@ set -e
 
 # --- 1. SETUP USER CHOICE ---
 echo -e "\033[0;35m🌌 Aurora Setup: Set your Terminal Lock Password\033[0m"
-# Use /dev/tty to ensure input works correctly even when piped via curl
 read -rs -p "Set new Terminal Password: " NEW_PASS </dev/tty
 echo ""
 read -rs -p "Confirm Password: " CONFIRM_PASS </dev/tty
@@ -30,15 +29,16 @@ rm -rf "$TEMP_PATH"
 
 echo "🎨 Personalizing your Terminal Lock..."
 
-# --- 4. GENERATE THE THEME WITH USER'S CHOICE ---
-# printf safely injects the password and avoids common here-doc EOF issues
+# --- 4. GENERATE THE THEME ---
 printf 'CORRECT_PASSWORD="%s"\n' "$NEW_PASS" > "$INSTALL_PATH/aurora_theme.sh"
 cat << 'EOF' >> "$INSTALL_PATH/aurora_theme.sh"
 
 echo -e "\033[0;35m🔐 Aurora Terminal Lock\033[0m"
 
-while true; do
-    # Check for ZSH vs Bash to use the correct read syntax
+ATTEMPTS=0
+MAX_ATTEMPTS=3
+
+while [ $ATTEMPTS -lt $MAX_ATTEMPTS ]; do
     if [ -n "$ZSH_VERSION" ]; then
         read -rs "?Enter Terminal Password: " user_input </dev/tty
     else
@@ -50,20 +50,28 @@ while true; do
         echo -e "\033[0;32m✅ Access Granted.\033[0m"
         break
     else
-        echo -e "\033[0;31m❌ Access Denied. Closing session...\033[0m"
-        sleep 1
-        exit 1
+        ATTEMPTS=$((ATTEMPTS + 1))
+        REMAINING=$((MAX_ATTEMPTS - ATTEMPTS))
+        
+        if [ $REMAINING -gt 0 ]; then
+            echo -e "\033[0;31m❌ Incorrect password.\033[0m"
+            echo -e "\033[0;33m⏳ Security delay active... (2s)\033[0m"
+            sleep 2
+            echo -e "\033[0;36m🔑 $REMAINING attempts remaining.\033[0m"
+        else
+            echo -e "\033[0;31m❌ Final Attempt Failed. Closing session...\033[0m"
+            sleep 1
+            exit 1
+        fi
     fi
 done
 
 aurora_display_login() {
-    # System stats extraction
     local date_val=$(date +"%m/%d/%y")
     local battery=$(pmset -g batt 2>/dev/null | grep -Eo "\d+%" | head -1 || echo "N/A")
     local cpu_load=$(top -l 1 | grep "CPU usage" | awk '{print $3}' | sed 's/%//')
     local disk_free=$(df -h / | awk 'NR==2 {print $4}')
 
-    # ASCII Logo
     echo " 
  █████╗ ██╗   ██╗██████╗  ██████╗ ██████╗  █████╗ 
 ██╔══██╗██║   ██║██╔══██╗██╔═══██╗██╔══██╗██╔══██╗
@@ -77,17 +85,13 @@ aurora_display_login() {
 ███████╗███████║█████╗  ██║     ██║               
 ╚════██║██╔══██║██╔══╝  ██║     ██║               
 ███████║██║  ██║███████╗███████╗███████╗          
-╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝" | lolcat
+╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝  " | lolcat
 
-    # Stats Bar
     echo -e "\033[0;36m📅 $date_val | 🔋 $battery | 🧠 CPU: $cpu_load | 💽 $disk_free Free\033[0m" | lolcat
     echo "---------------------------------------------------" | lolcat
 }
 
-# Run the display once at login
 aurora_display_login
-
-# Set the prompt without precmd to stop the repeating stats
 export PROMPT="%F{cyan}🌌 Aurora %F{white}%n@%m: %f"
 EOF
 
@@ -97,4 +101,4 @@ if ! grep -q "source $INSTALL_PATH/aurora_theme.sh" "$ZSH_CONFIG"; then
     echo "source $INSTALL_PATH/aurora_theme.sh" >> "$ZSH_CONFIG"
 fi
 
-echo -e "\033[0;32m✨ Success! Your custom Aurora Lock is active.\033[0m"
+echo -e "\033[0;32m✨ Success! 3-attempt lock with delay is active.\033[0m"

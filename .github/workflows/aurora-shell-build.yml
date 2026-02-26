@@ -1,29 +1,28 @@
-name: Build Aurora Release
-
+name: Aurora Release Build
 on:
   push:
     branches: [ main ]
   workflow_dispatch:
 
 jobs:
-  macos-installer:
+  macos-dist:
     runs-on: macos-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Prepare Package Scripts
+      - name: Prepare Scripts
         run: |
           mkdir -p build/scripts
-          # Rename install.sh to 'postinstall' so macOS triggers it automatically
+          # Use the script you provided as the post-install trigger
           cp install.sh build/scripts/postinstall
           chmod +x build/scripts/postinstall
 
-      - name: Create macOS Package (.pkg)
+      - name: Create Installer Package (.pkg)
         run: |
-          # --nopayload means the script IS the installer
+          # Creates a package that runs your code on completion
           pkgbuild --identifier com.yashb.aurora \
-                   --version 2.0 \
+                   --version 4.0.0 \
                    --scripts build/scripts \
                    --nopayload \
                    Aurora-Installer.pkg
@@ -32,13 +31,10 @@ jobs:
         run: |
           mkdir -p dist
           cp Aurora-Installer.pkg dist/
-          hdiutil create -volname "Aurora Shell Installer" \
-                         -srcfolder dist \
-                         -ov -format UDZO \
-                         Aurora-Shell-Mac.dmg
+          hdiutil create -volname "Aurora Shell" -srcfolder dist -ov -format UDZO Aurora-Shell-v4.dmg
 
       - name: Upload Release Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Aurora-Installer
-          path: Aurora-Shell-Mac.dmg
+          name: Aurora-Mac-Installer
+          path: Aurora-Shell-v4.dmg

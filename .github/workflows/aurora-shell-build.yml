@@ -1,4 +1,4 @@
-name: Build and Release Aurora Shell
+name: Build Aurora Release
 
 on:
   push:
@@ -6,51 +6,39 @@ on:
   workflow_dispatch:
 
 jobs:
-  macos-build:
+  macos-installer:
     runs-on: macos-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Prepare Staging Area
+      - name: Prepare Package Scripts
         run: |
-          mkdir -p staging/usr/local/bin/aurora-theme
-          # Copy your core scripts and files
-          cp install.sh staging/
-          cp uninstall.sh staging/
-          # Copy your theme folder if it exists
-          if [ -d "theme_folder" ]; then cp -r theme_folder staging/usr/local/bin/aurora-theme/; fi
-          chmod +x staging/*.sh
+          mkdir -p build/scripts
+          # Rename install.sh to 'postinstall' so macOS triggers it automatically
+          cp install.sh build/scripts/postinstall
+          chmod +x build/scripts/postinstall
 
-      - name: Build Installer Package (.pkg)
+      - name: Create macOS Package (.pkg)
         run: |
-          # This creates the actual 'installer' behavior
-          pkgbuild --identifier com.yashb.aurora --version 1.0 \
-                   --scripts staging \
-                   --root staging \
-                   --install-location /tmp/aurora-install \
+          # --nopayload means the script IS the installer
+          pkgbuild --identifier com.yashb.aurora \
+                   --version 2.0 \
+                   --scripts build/scripts \
+                   --nopayload \
                    Aurora-Installer.pkg
 
-      - name: Create Disk Image (.dmg)
+      - name: Create DMG
         run: |
           mkdir -p dist
           cp Aurora-Installer.pkg dist/
-          # Wrap the .pkg inside the .dmg
           hdiutil create -volname "Aurora Shell Installer" \
                          -srcfolder dist \
                          -ov -format UDZO \
                          Aurora-Shell-Mac.dmg
 
-      - name: Upload Artifact
+      - name: Upload Release Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Aurora-macOS-Installer
+          name: Aurora-Installer
           path: Aurora-Shell-Mac.dmg
-
-  # Optional: Keep your Windows build here too
-  windows-build:
-    runs-on: windows-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-      # ... (Add your existing Windows .exe build steps here)

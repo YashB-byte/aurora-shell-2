@@ -73,7 +73,7 @@ aurora() {
         *) echo -e "Usage: aurora [lock|pass]\nHelp:  shell.aurora?help" ;;
     esac
 }
-alias "shell.aurora?help"="aurora"
+alias "shell.aurora?help"
 export PROMPT="%F{cyan}🌌 Aurora %F{white}%n@%m: %f"
 EOF
 

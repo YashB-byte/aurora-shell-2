@@ -1,5 +1,5 @@
 #!/bin/bash
-# --- AURORA SYSTEM INSTALLER ---
+# --- AURORA SYSTEM INSTALLER v4.0.0 ---
 
 # 1. SET PASSWORD
 echo -e "\033[0;35m🌌 Aurora Setup: Set your Terminal Lock Password\033[0m"
@@ -13,11 +13,20 @@ if [ "$NEW_PASS" != "$CONFIRM_PASS" ]; then
     exit 1
 fi
 
-# 2. FILE SETUP
+# 2. DEPENDENCY CHECK
+echo "🔍 Checking for required tools..."
+for tool in lolcat pygmentize; do
+    if ! command -v $tool &> /dev/null; then
+        echo "📥 $tool not found. Attempting install..."
+        brew install $tool || pip3 install $tool || echo "⚠️  Please install $tool manually."
+    fi
+done
+
+# 3. FILE SETUP
 INSTALL_PATH="$HOME/.aurora-shell_2theme"
 mkdir -p "$INSTALL_PATH"
 
-# 3. GENERATE THE THEME FILE
+# 4. GENERATE THE THEME FILE
 printf 'CORRECT_PASSWORD="%s"\n' "$NEW_PASS" > "$INSTALL_PATH/aurora_theme.sh"
 cat << 'EOF' >> "$INSTALL_PATH/aurora_theme.sh"
 # --- SECURITY LOCK ---
@@ -52,10 +61,10 @@ aurora_display() {
      ███████║██║  ██║███████╗███████╗███████╗          
      ╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝" | lolcat
     echo -e "\033[0;36m📅 $(date +%D) | 🔋 $battery | 🧠 CPU: $(top -l 1 | grep "CPU usage" | awk '{print $3}')\033[0m" | lolcat
-    echo -e "------------------------------------" | lolcat}
+}
 aurora_display
 
-# --- COMMANDS ---
+# --- MANAGER COMMANDS ---
 aurora() {
     case "$1" in
         "lock") clear && source "$HOME/.aurora-shell_2theme/aurora_theme.sh" ;;
@@ -70,15 +79,22 @@ aurora() {
             else
                 echo "❌ Wrong password."
             fi ;;
-        *) echo -e "Usage: aurora [lock|pass]\nHelp:  shell.aurora?help" ;;
+        "update")
+            local VER=${2:-"main"}
+            echo -e "\033[0;35m🔄 Updating Aurora to version: $VER...\033[0m"
+            curl -s "https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/$VER/install.sh" | bash
+            ;;
+        *) echo -e "Usage: aurora [lock|pass|update]\nHelp:  shell.aurora?help\nUpdate: aurora.shell>update [v*]" ;;
     esac
 }
-alias "shell.aurora?help"
+alias "shell.aurora?help"="aurora"
+alias "aurora.shell>update"="aurora update"
+
 export PROMPT="%F{cyan}🌌 Aurora %F{white}%n@%m: %f"
 EOF
 
-# 4. LINK TO ZSHRC
+# 5. LINK TO ZSHRC
 ZSH_CONFIG="$HOME/.zshrc"
 grep -q "aurora_theme.sh" "$ZSH_CONFIG" || echo "source $INSTALL_PATH/aurora_theme.sh" >> "$ZSH_CONFIG"
 
-echo -e "\033[0;32m✨ Aurora Installed! Open a new tab to start.\033[0m"
+echo -e "\033[0;32m✨ Aurora Installed! Run 'source ~/.zshrc' or open a new tab.\033[0m"

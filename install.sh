@@ -3,7 +3,7 @@ set -e
 
 # --- 1. SETUP USER CHOICE ---
 echo -e "\033[0;35m🌌 Aurora Setup: Set your Terminal Lock Password\033[0m"
-# Ask the user to choose their password
+# Use /dev/tty to ensure input works correctly even when piped via curl
 read -rs -p "Set new Terminal Password: " NEW_PASS </dev/tty
 echo ""
 read -rs -p "Confirm Password: " CONFIRM_PASS </dev/tty
@@ -31,13 +31,14 @@ rm -rf "$TEMP_PATH"
 echo "🎨 Personalizing your Terminal Lock..."
 
 # --- 4. GENERATE THE THEME WITH USER'S CHOICE ---
-# We use printf to avoid EOF errors and safely inject the password
+# printf safely injects the password and avoids common here-doc EOF issues
 printf 'CORRECT_PASSWORD="%s"\n' "$NEW_PASS" > "$INSTALL_PATH/aurora_theme.sh"
 cat << 'EOF' >> "$INSTALL_PATH/aurora_theme.sh"
 
 echo -e "\033[0;35m🔐 Aurora Terminal Lock\033[0m"
 
 while true; do
+    # Check for ZSH vs Bash to use the correct read syntax
     if [ -n "$ZSH_VERSION" ]; then
         read -rs "?Enter Terminal Password: " user_input </dev/tty
     else
@@ -55,16 +56,15 @@ while true; do
     fi
 done
 
-aurora_stats() {
+aurora_display_login() {
+    # System stats extraction
     local date_val=$(date +"%m/%d/%y")
     local battery=$(pmset -g batt 2>/dev/null | grep -Eo "\d+%" | head -1 || echo "N/A")
     local cpu_load=$(top -l 1 | grep "CPU usage" | awk '{print $3}' | sed 's/%//')
     local disk_free=$(df -h / | awk 'NR==2 {print $4}')
-    echo -e "\033[0;36m📅 $date_val | 🔋 $battery | 🧠 CPU: $cpu_load | 💽 $disk_free Free\033[0m" | lolcat
-    echo "---------------------------------------------------" | lolcat
-}
 
-echo " 
+    # ASCII Logo
+    echo " 
  █████╗ ██╗   ██╗██████╗  ██████╗ ██████╗  █████╗ 
 ██╔══██╗██║   ██║██╔══██╗██╔═══██╗██╔══██╗██╔══██╗
 ███████║██║   ██║██████╔╝██║   ██║██████╔╝███████║
@@ -77,8 +77,17 @@ echo "
 ███████╗███████║█████╗  ██║     ██║               
 ╚════██║██╔══██║██╔══╝  ██║     ██║               
 ███████║██║  ██║███████╗███████╗███████╗          
-╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝    " | lolcat
-precmd() { aurora_stats }
+╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝" | lolcat
+
+    # Stats Bar
+    echo -e "\033[0;36m📅 $date_val | 🔋 $battery | 🧠 CPU: $cpu_load | 💽 $disk_free Free\033[0m" | lolcat
+    echo "---------------------------------------------------" | lolcat
+}
+
+# Run the display once at login
+aurora_display_login
+
+# Set the prompt without precmd to stop the repeating stats
 export PROMPT="%F{cyan}🌌 Aurora %F{white}%n@%m: %f"
 EOF
 

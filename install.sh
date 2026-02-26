@@ -59,8 +59,18 @@ aurora_display
 aurora() {
     case "$1" in
         "lock") clear && source "$HOME/.aurora-shell_2theme/aurora_theme.sh" ;;
-        "pass") # (Add password change logic here) ;;
-        *) echo "Usage: aurora [lock|pass] | shell.aurora?help" ;;
+        "pass")
+            if [ -n "$ZSH_VERSION" ]; then read -rs "?Current Pass: " op; else read -rsp "Current Pass: " op; fi
+            echo ""
+            if [ "$op" = "$CORRECT_PASSWORD" ]; then
+                if [ -n "$ZSH_VERSION" ]; then read -rs "?New Pass: " np; else read -rsp "New Pass: " np; fi
+                echo ""
+                sed -i '' "s/CORRECT_PASSWORD=\".*\"/CORRECT_PASSWORD=\"$np\"/" "$HOME/.aurora-shell_2theme/aurora_theme.sh"
+                CORRECT_PASSWORD="$np" && echo "✅ Updated!"
+            else
+                echo "❌ Wrong password."
+            fi ;;
+        *) echo -e "Usage: aurora [lock|pass]\nHelp:  shell.aurora?help" ;;
     esac
 }
 alias "shell.aurora?help"="aurora"
@@ -71,4 +81,4 @@ EOF
 ZSH_CONFIG="$HOME/.zshrc"
 grep -q "aurora_theme.sh" "$ZSH_CONFIG" || echo "source $INSTALL_PATH/aurora_theme.sh" >> "$ZSH_CONFIG"
 
-echo -e "\033[0;32m✨ Aurora Installed!\033[0m"
+echo -e "\033[0;32m✨ Aurora Installed! Open a new tab to start.\033[0m"

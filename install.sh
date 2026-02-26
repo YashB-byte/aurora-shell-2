@@ -91,8 +91,8 @@ aurora() {
             ;;
     esac
 }
-alias "shell.aurora -- help"="aurora"
-alias "shell.aurora -- update"="aurora update"
+alias "shell.aurora --help"="aurora help"
+alias "shell.aurora --update"="aurora update"
 
 export PROMPT="%F{cyan}🌌 Aurora %F{white}%n@%m: %f"
 EOF

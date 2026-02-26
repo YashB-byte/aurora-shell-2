@@ -29,10 +29,11 @@ rm -rf "$TEMP_PATH"
 
 echo "🎨 Personalizing your Terminal Lock..."
 
-# --- 4. GENERATE THE THEME ---
+# --- 4. GENERATE THE THEME FILE ---
 printf 'CORRECT_PASSWORD="%s"\n' "$NEW_PASS" > "$INSTALL_PATH/aurora_theme.sh"
-cat << 'EOF' >> "$INSTALL_PATH/aurora_theme.sh"
 
+cat << 'EOF' >> "$INSTALL_PATH/aurora_theme.sh"
+# --- SECURITY LOCK SYSTEM ---
 echo -e "\033[0;35m🔐 Aurora Terminal Lock\033[0m"
 
 ATTEMPTS=0
@@ -66,6 +67,7 @@ while [ $ATTEMPTS -lt $MAX_ATTEMPTS ]; do
     fi
 done
 
+# --- LOGIN DISPLAY ---
 aurora_display_login() {
     local date_val=$(date +"%m/%d/%y")
     local battery=$(pmset -g batt 2>/dev/null | grep -Eo "\d+%" | head -1 || echo "N/A")
@@ -85,13 +87,51 @@ aurora_display_login() {
 ███████╗███████║█████╗  ██║     ██║               
 ╚════██║██╔══██║██╔══╝  ██║     ██║               
 ███████║██║  ██║███████╗███████╗███████╗          
-╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝  " | lolcat
+╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝" | lolcat
 
     echo -e "\033[0;36m📅 $date_val | 🔋 $battery | 🧠 CPU: $cpu_load | 💽 $disk_free Free\033[0m" | lolcat
     echo "---------------------------------------------------" | lolcat
 }
 
 aurora_display_login
+
+# --- MANAGER COMMANDS ---
+aurora_help() {
+    echo -e "\033[0;35m🌌 Aurora Command Center\033[0m"
+    echo "---------------------------------------------------"
+    echo -e "🔒 \033[1maurora lock\033[0m      - Lock terminal immediately"
+    echo -e "🔑 \033[1maurora pass\033[0m      - Change your local password"
+    echo -e "❓ \033[1mshell.aurora?help\033[0m - Show this guide"
+    echo "---------------------------------------------------"
+}
+
+aurora() {
+    case "$1" in
+        "lock")
+            clear && source "$HOME/.aurora-shell_2theme/aurora_theme.sh"
+            ;;
+        "pass")
+            if [ -n "$ZSH_VERSION" ]; then read -rs "?Current Password: " old_pass; else read -rsp "Current Password: " old_pass; fi
+            echo ""
+            if [ "$old_pass" = "$CORRECT_PASSWORD" ]; then
+                if [ -n "$ZSH_VERSION" ]; then read -rs "?New Password: " new_pass; else read -rsp "New Password: " new_pass; fi
+                echo ""
+                sed -i '' "s/CORRECT_PASSWORD=\".*\"/CORRECT_PASSWORD=\"$new_pass\"/" "$HOME/.aurora-shell_2theme/aurora_theme.sh"
+                CORRECT_PASSWORD="$new_pass"
+                echo "✅ Password updated!"
+            else
+                echo "❌ Denied."
+            fi
+            ;;
+        *)
+            aurora_help
+            ;;
+    esac
+}
+
+# The Specific Alias
+alias "shell.aurora?help"="aurora"
+
 export PROMPT="%F{cyan}🌌 Aurora %F{white}%n@%m: %f"
 EOF
 
@@ -101,4 +141,9 @@ if ! grep -q "source $INSTALL_PATH/aurora_theme.sh" "$ZSH_CONFIG"; then
     echo "source $INSTALL_PATH/aurora_theme.sh" >> "$ZSH_CONFIG"
 fi
 
-echo -e "\033[0;32m✨ Success! 3-attempt lock with delay is active.\033[0m"
+# --- 6. FINAL SUCCESS MESSAGE ---
+clear
+echo -e "\033[0;32m✨ Aurora Installation Successful!\033[0m"
+echo "---------------------------------------------------"
+echo -e "Type \033[1mshell.aurora?help\033[0m to see commands."
+echo "Please run: source ~/.zshrc"

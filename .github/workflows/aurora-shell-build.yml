@@ -1,124 +1,56 @@
-name: Aurora Shell Build
+name: Build and Release Aurora Shell
 
 on:
   push:
     branches: [ main ]
-    tags: [ 'v*' ]
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 jobs:
-  build:
-    name: Build Aurora
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [windows-latest, macos-latest]
-
+  macos-build:
+    runs-on: macos-latest
     steps:
-      - name: 📥 Checkout Code
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: 🪟 Windows Build (PowerShell Profile)
-        if: matrix.os == 'windows-latest'
-        shell: pwsh
+      - name: Prepare Staging Area
         run: |
-          mkdir "Aurora-Win"
-          $psContent = @'
-          # Aurora Shell for Windows PowerShell
-          Write-Host "
-           █████╗ ██╗   ██╗██████╗  ██████╗ ██████╗  █████╗ 
-          ██╔══██╗██║   ██║██╔══██╗██╔═══██╗██╔══██╗██╔══██╗
-          ███████║██║   ██║██████╔╝██║   ██║██████╔╝███████║
-          ██╔══██║██║   ██║██╔══██╗██║   ██║██╔══██╗██╔══██║
-          ██║  ██║╚██████╔╝██║  ██║╚██████╔╝██║  ██║██║  ██║
-          ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝
-                                                            
-          ███████╗██╗  ██╗███████╗██╗     ██╗               
-          ██╔════╝██║  ██║██╔════╝██║     ██║               
-          ███████╗███████║█████╗  ██║     ██║               
-          ╚════██║██╔══██║██╔══╝  ██║     ██║               
-          ███████║██║  ██║███████╗███████╗███████╗          
-          ╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝          
-          " -ForegroundColor Cyan
+          mkdir -p staging/usr/local/bin/aurora-theme
+          # Copy your core scripts and files
+          cp install.sh staging/
+          cp uninstall.sh staging/
+          # Copy your theme folder if it exists
+          if [ -d "theme_folder" ]; then cp -r theme_folder staging/usr/local/bin/aurora-theme/; fi
+          chmod +x staging/*.sh
 
-          function prompt { 
-              Write-Host "🌌 Aurora " -NoNewline -ForegroundColor Cyan
-              Write-Host "$($env:USERNAME)@$($env:COMPUTERNAME): " -NoNewline -ForegroundColor White
-              return " " 
-          }
-          '@ 
-          $psContent | Out-File "Aurora-Win/install.ps1"
-          "@echo off`npowershell -ExecutionPolicy Bypass -File ./install.ps1`npause" | Out-File "Aurora-Win/RunMe.bat" -Encoding ascii
-          Compress-Archive -Path "Aurora-Win" -DestinationPath "AuroraShell-Windows.zip"
-
-      - name: 🍎 macOS Build (Professional PKG)
-        if: matrix.os == 'macos-latest'
+      - name: Build Installer Package (.pkg)
         run: |
-          mkdir -p scripts empty_payload dmg_root
-          
-          # 1. Create the postinstall script
-          cat <<'EOF' > scripts/postinstall
-          #!/bin/bash
-          # Determine the actual user (not root) to find the correct home directory
-          USER_HOME=$(eval echo "~${USER}")
-          THEME_FILE="$USER_HOME/.aurora_theme.sh"
-          ZSHRC="$USER_HOME/.zshrc"
+          # This creates the actual 'installer' behavior
+          pkgbuild --identifier com.yashb.aurora --version 1.0 \
+                   --scripts staging \
+                   --root staging \
+                   --install-location /tmp/aurora-install \
+                   Aurora-Installer.pkg
 
-          cat <<'INNER' > "$THEME_FILE"
-          echo "
-           █████╗ ██╗   ██╗██████╗  ██████╗ ██████╗  █████╗ 
-          ██╔══██╗██║   ██║██╔══██╗██╔═══██╗██╔══██╗██╔══██╗
-          ███████║██║   ██║██████╔╝██║   ██║██████╔╝███████║
-          ██╔══██║██║   ██║██╔══██╗██║   ██║██╔══██╗██╔══██║
-          ██║  ██║╚██████╔╝██║  ██║╚██████╔╝██║  ██║██║  ██║
-          ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝
-                                                            
-          ███████╗██╗  ██╗███████╗██╗     ██╗               
-          ██╔════╝██║  ██║██╔════╝██║     ██║               
-          ███████╗███████║█████╗  ██║     ██║               
-          ╚════██║██╔══██║██╔══╝  ██║     ██║               
-          ███████║██║  ██║███████╗███████╗███████╗          
-          ╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝          
-          " | lolcat
+      - name: Create Disk Image (.dmg)
+        run: |
+          mkdir -p dist
+          cp Aurora-Installer.pkg dist/
+          # Wrap the .pkg inside the .dmg
+          hdiutil create -volname "Aurora Shell Installer" \
+                         -srcfolder dist \
+                         -ov -format UDZO \
+                         Aurora-Shell-Mac.dmg
 
-          get_battery() { 
-              if command -v pmset &> /dev/null; then pmset -g batt | grep -Eo "\d+%" | head -1; else echo "⚡ AC"; fi
-          }
-          get_disk() { df -h / | awk 'NR==2 {print $4}'; }
-          get_cpu() { uptime | awk -F'load averages: ' '{ print $2 }' | cut -d' ' -f1; }
-
-          echo "📅 \$(date +'%D') | 🔋 \$(get_battery) | 🧠 CPU: \$(get_cpu) | 💽 \$(get_disk) Free" | lolcat
-          echo "--------------------------------------------------" | lolcat
-          export PROMPT="%F{cyan}🌌 Aurora %F{white}%n@%m: %f"
-          INNER
-
-          chown ${USER} "$THEME_FILE"
-          grep -qxF "source $THEME_FILE" "$ZSHRC" || echo "source $THEME_FILE" >> "$ZSHRC"
-          exit 0
-          EOF
-
-          chmod +x scripts/postinstall
-
-          # 2. Build the PKG
-          pkgbuild --identifier "com.aurora.shell" \
-                   --version "1.0" \
-                   --scripts scripts \
-                   --root empty_payload \
-                   "AuroraShell.pkg"
-
-          # 3. Wrap in DMG
-          cp "AuroraShell.pkg" dmg_root/
-          hdiutil create -ov -volname "Aurora Shell Installer" -srcfolder dmg_root -format UDZO "AuroraShell-Mac.dmg"
-
-      - name: 🚀 Create Release
-        uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
         with:
-          files: |
-            AuroraShell-Windows.zip
-            AuroraShell-Mac.dmg
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: Aurora-macOS-Installer
+          path: Aurora-Shell-Mac.dmg
+
+  # Optional: Keep your Windows build here too
+  windows-build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      # ... (Add your existing Windows .exe build steps here)

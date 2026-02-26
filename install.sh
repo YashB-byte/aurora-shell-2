@@ -60,8 +60,8 @@ aurora_stats() {
     local battery=$(pmset -g batt 2>/dev/null | grep -Eo "\d+%" | head -1 || echo "N/A")
     local cpu_load=$(top -l 1 | grep "CPU usage" | awk '{print $3}' | sed 's/%//')
     local disk_free=$(df -h / | awk 'NR==2 {print $4}')
-    echo -e "\033[0;36m📅 $date_val | 🔋 $battery | 🧠 CPU: $cpu_load | 💽 $disk_free Free\033[0m"
-    echo "---------------------------------------------------"
+    echo -e "\033[0;36m📅 $date_val | 🔋 $battery | 🧠 CPU: $cpu_load | 💽 $disk_free Free\033[0m" | lolcat
+    echo "---------------------------------------------------" | lolcat
 }
 
 echo " 

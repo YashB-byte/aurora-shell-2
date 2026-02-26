@@ -18,7 +18,7 @@ echo "🔍 Checking for required tools..."
 for tool in lolcat pygmentize; do
     if ! command -v $tool &> /dev/null; then
         echo "📥 $tool not found. Attempting install..."
-        brew install $tool || pip3 install $tool || echo "⚠️  Please install $tool manually."
+        brew install $tool || pip3 install $tool || echo "⚠️ Please install $tool manually."
     fi
 done
 
@@ -84,11 +84,15 @@ aurora() {
             echo -e "\033[0;35m🔄 Updating Aurora to version: $VER...\033[0m"
             curl -s "https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/$VER/install.sh" | bash
             ;;
-        *) echo -e "Usage: aurora [lock|pass|update]\nHelp:  shell.aurora?help\nUpdate: aurora.shell>update [v*]" ;;
+        *) 
+            echo -e "Usage: aurora [lock|pass|update]"
+            echo -e "Help:   shell.aurora -- help"
+            echo -e "Update: shell.aurora -- update [v*]" 
+            ;;
     esac
 }
-alias "shell.aurora?help"="aurora"
-alias "aurora.shell>update"="aurora update"
+alias "shell.aurora -- help"="aurora"
+alias "shell.aurora -- update"="aurora update"
 
 export PROMPT="%F{cyan}🌌 Aurora %F{white}%n@%m: %f"
 EOF

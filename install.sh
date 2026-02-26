@@ -1,7 +1,7 @@
 #!/bin/bash
-set -e
+# --- AURORA SYSTEM INSTALLER ---
 
-# --- 1. SETUP USER CHOICE ---
+# 1. SET PASSWORD
 echo -e "\033[0;35m🌌 Aurora Setup: Set your Terminal Lock Password\033[0m"
 read -rs -p "Set new Terminal Password: " NEW_PASS </dev/tty
 echo ""
@@ -13,67 +13,30 @@ if [ "$NEW_PASS" != "$CONFIRM_PASS" ]; then
     exit 1
 fi
 
-# --- 2. CONFIGURATION ---
-REPO_URL="https://github.com/YashB-byte/aurora-shell-2.git"
+# 2. FILE SETUP
 INSTALL_PATH="$HOME/.aurora-shell_2theme"
-TEMP_PATH="/tmp/aurora-tmp"
-
-# --- 3. INSTALLATION ---
-rm -rf "$TEMP_PATH"
-echo "📥 Fetching Aurora files..."
-git clone "$REPO_URL" "$TEMP_PATH"
-
 mkdir -p "$INSTALL_PATH"
-cp -rf "$TEMP_PATH"/* "$INSTALL_PATH/"
-rm -rf "$TEMP_PATH"
 
-echo "🎨 Personalizing your Terminal Lock..."
-
-# --- 4. GENERATE THE THEME FILE ---
+# 3. GENERATE THE THEME FILE
 printf 'CORRECT_PASSWORD="%s"\n' "$NEW_PASS" > "$INSTALL_PATH/aurora_theme.sh"
-
 cat << 'EOF' >> "$INSTALL_PATH/aurora_theme.sh"
-# --- SECURITY LOCK SYSTEM ---
+# --- SECURITY LOCK ---
 echo -e "\033[0;35m🔐 Aurora Terminal Lock\033[0m"
-
 ATTEMPTS=0
-MAX_ATTEMPTS=3
-
-while [ $ATTEMPTS -lt $MAX_ATTEMPTS ]; do
-    if [ -n "$ZSH_VERSION" ]; then
-        read -rs "?Enter Terminal Password: " user_input </dev/tty
-    else
-        read -rsp "Enter Terminal Password: " user_input </dev/tty
-    fi
-    echo "" 
-
-    if [ "$(echo "$user_input" | xargs)" = "$CORRECT_PASSWORD" ]; then
-        echo -e "\033[0;32m✅ Access Granted.\033[0m"
-        break
+while [ $ATTEMPTS -lt 3 ]; do
+    if [ -n "$ZSH_VERSION" ]; then read -rs "?Password: " ui </dev/tty; else read -rsp "Password: " ui </dev/tty; fi
+    echo ""
+    if [ "$(echo "$ui" | xargs)" = "$CORRECT_PASSWORD" ]; then
+        echo -e "\033[0;32m✅ Access Granted.\033[0m"; break
     else
         ATTEMPTS=$((ATTEMPTS + 1))
-        REMAINING=$((MAX_ATTEMPTS - ATTEMPTS))
-        
-        if [ $REMAINING -gt 0 ]; then
-            echo -e "\033[0;31m❌ Incorrect password.\033[0m"
-            echo -e "\033[0;33m⏳ Security delay active... (2s)\033[0m"
-            sleep 2
-            echo -e "\033[0;36m🔑 $REMAINING attempts remaining.\033[0m"
-        else
-            echo -e "\033[0;31m❌ Final Attempt Failed. Closing session...\033[0m"
-            sleep 1
-            exit 1
-        fi
+        [ $ATTEMPTS -lt 3 ] && echo "❌ Incorrect. $((3-ATTEMPTS)) left." && sleep 2 || { echo "❌ Denied."; exit 1; }
     fi
 done
 
-# --- LOGIN DISPLAY ---
-aurora_display_login() {
-    local date_val=$(date +"%m/%d/%y")
+# --- LOGO & STATS ---
+aurora_display() {
     local battery=$(pmset -g batt 2>/dev/null | grep -Eo "\d+%" | head -1 || echo "N/A")
-    local cpu_load=$(top -l 1 | grep "CPU usage" | awk '{print $3}' | sed 's/%//')
-    local disk_free=$(df -h / | awk 'NR==2 {print $4}')
-
     echo " 
  █████╗ ██╗   ██╗██████╗  ██████╗ ██████╗  █████╗ 
 ██╔══██╗██║   ██║██╔══██╗██╔═══██╗██╔══██╗██╔══██╗
@@ -82,68 +45,30 @@ aurora_display_login() {
 ██║  ██║╚██████╔╝██║  ██║╚██████╔╝██║  ██║██║  ██║
 ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝
                                                   
-███████╗██╗  ██╗███████╗██╗     ██╗               
-██╔════╝██║  ██║██╔════╝██║     ██║               
-███████╗███████║█████╗  ██║     ██║               
-╚════██║██╔══██║██╔══╝  ██║     ██║               
-███████║██║  ██║███████╗███████╗███████╗          
-╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝" | lolcat
-
-    echo -e "\033[0;36m📅 $date_val | 🔋 $battery | 🧠 CPU: $cpu_load | 💽 $disk_free Free\033[0m" | lolcat
-    echo "---------------------------------------------------" | lolcat
+     ███████╗██╗  ██╗███████╗██╗     ██╗               
+     ██╔════╝██║  ██║██╔════╝██║     ██║               
+     ███████╗███████║█████╗  ██║     ██║               
+     ╚════██║██╔══██║██╔══╝  ██║     ██║               
+     ███████║██║  ██║███████╗███████╗███████╗          
+     ╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝" | lolcat
+    echo -e "\033[0;36m📅 $(date +%D) | 🔋 $battery | 🧠 CPU: $(top -l 1 | grep "CPU usage" | awk '{print $3}')\033[0m" | lolcat
 }
+aurora_display
 
-aurora_display_login
-
-# --- MANAGER COMMANDS ---
-aurora_help() {
-    echo -e "\033[0;35m🌌 Aurora Command Center\033[0m"
-    echo "---------------------------------------------------"
-    echo -e "🔒 \033[1maurora lock\033[0m      - Lock terminal immediately"
-    echo -e "🔑 \033[1maurora pass\033[0m      - Change your local password"
-    echo -e "❓ \033[1mshell.aurora?help\033[0m - Show this guide"
-    echo "---------------------------------------------------"
-}
-
+# --- COMMANDS ---
 aurora() {
     case "$1" in
-        "lock")
-            clear && source "$HOME/.aurora-shell_2theme/aurora_theme.sh"
-            ;;
-        "pass")
-            if [ -n "$ZSH_VERSION" ]; then read -rs "?Current Password: " old_pass; else read -rsp "Current Password: " old_pass; fi
-            echo ""
-            if [ "$old_pass" = "$CORRECT_PASSWORD" ]; then
-                if [ -n "$ZSH_VERSION" ]; then read -rs "?New Password: " new_pass; else read -rsp "New Password: " new_pass; fi
-                echo ""
-                sed -i '' "s/CORRECT_PASSWORD=\".*\"/CORRECT_PASSWORD=\"$new_pass\"/" "$HOME/.aurora-shell_2theme/aurora_theme.sh"
-                CORRECT_PASSWORD="$new_pass"
-                echo "✅ Password updated!"
-            else
-                echo "❌ Denied."
-            fi
-            ;;
-        *)
-            aurora_help
-            ;;
+        "lock") clear && source "$HOME/.aurora-shell_2theme/aurora_theme.sh" ;;
+        "pass") # (Add password change logic here) ;;
+        *) echo "Usage: aurora [lock|pass] | shell.aurora?help" ;;
     esac
 }
-
-# The Specific Alias
 alias "shell.aurora?help"="aurora"
-
 export PROMPT="%F{cyan}🌌 Aurora %F{white}%n@%m: %f"
 EOF
 
-# --- 5. LINK TO ZSH ---
+# 4. LINK TO ZSHRC
 ZSH_CONFIG="$HOME/.zshrc"
-if ! grep -q "source $INSTALL_PATH/aurora_theme.sh" "$ZSH_CONFIG"; then
-    echo "source $INSTALL_PATH/aurora_theme.sh" >> "$ZSH_CONFIG"
-fi
+grep -q "aurora_theme.sh" "$ZSH_CONFIG" || echo "source $INSTALL_PATH/aurora_theme.sh" >> "$ZSH_CONFIG"
 
-# --- 6. FINAL SUCCESS MESSAGE ---
-clear
-echo -e "\033[0;32m✨ Aurora Installation Successful!\033[0m"
-echo "---------------------------------------------------"
-echo -e "Type \033[1mshell.aurora?help\033[0m to see commands."
-echo "Please run: source ~/.zshrc"
+echo -e "\033[0;32m✨ Aurora Installed!\033[0m"

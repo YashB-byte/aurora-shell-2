@@ -1,17 +1,11 @@
 #!/bin/bash
-# --- AURORA SYSTEM INSTALLER v4.0.0 (VERBOSE MODE) ---
+# --- AURORA SYSTEM INSTALLER v4.0.0 ---
 
-# Add this at the very top of your script
+# 0. VERBOSE SETTINGS
 VERBOSE=false
 if [[ "$1" == "-v" || "$1" == "--verbose" ]]; then
     VERBOSE=true
-fi
-
-# Then, when you run a command, you do this:
-if [ "$VERBOSE" = true ]; then
-    git clone https://github.com/YashB-byte/aurora-shell-2.git "$INSTALL_PATH/repo"
-else
-    git clone https://github.com/YashB-byte/aurora-shell-2.git "$INSTALL_PATH/repo" 2>/dev/null
+    echo -e "\033[0;33m🛠️ Verbose Mode Enabled\033[0m"
 fi
 
 # 1. SET PASSWORD
@@ -29,10 +23,16 @@ fi
 # 2. DEPENDENCY CHECK
 echo "🔍 Checking for required tools..."
 for tool in lolcat pygmentize git; do
-    # Removed /dev/null so you see the tool check output
-    if ! command -v $tool; then
-        echo "📥 $tool not found. Attempting install..."
-        brew install $tool || pip3 install $tool || echo "⚠️ Please install $tool manually."
+    if [ "$VERBOSE" = true ]; then
+        if ! command -v $tool; then
+            echo "📥 $tool not found. Attempting install..."
+            brew install $tool || pip3 install $tool
+        fi
+    else
+        if ! command -v $tool &>/dev/null; then
+            echo "📥 $tool not found. Attempting install..."
+            brew install $tool &>/dev/null || pip3 install $tool &>/dev/null
+        fi
     fi
 done
 
@@ -41,8 +41,11 @@ INSTALL_PATH="$HOME/.aurora-shell_2theme"
 mkdir -p "$INSTALL_PATH"
 
 echo "📥 Cloning Aurora Shell..."
-# Removed 2>/dev/null: You will see "destination path already exists" if it's there
-git clone https://github.com/YashB-byte/aurora-shell-2.git "$INSTALL_PATH/repo" || (cd "$INSTALL_PATH/repo" && git pull)
+if [ "$VERBOSE" = true ]; then
+    git clone https://github.com/YashB-byte/aurora-shell-2.git "$INSTALL_PATH/repo" || (cd "$INSTALL_PATH/repo" && git pull)
+else
+    git clone https://github.com/YashB-byte/aurora-shell-2.git "$INSTALL_PATH/repo" 2>/dev/null || (cd "$INSTALL_PATH/repo" && git pull 2>/dev/null)
+fi
 
 # 4. GENERATE THE THEME FILE
 printf 'CORRECT_PASSWORD="%s"\n' "$NEW_PASS" > "$INSTALL_PATH/aurora_theme.sh"
@@ -64,8 +67,7 @@ done
 
 # --- LOGO & STATS ---
 aurora_display() {
-    # Removed 2>/dev/null: You will see internal pmset/battery logs
-    local battery=$(pmset -g batt | grep -Eo "\d+%" | head -1 || echo "N/A")
+    local battery=$(pmset -g batt 2>/dev/null | grep -Eo "\d+%" | head -1 || echo "N/A")
     echo " 
  █████╗ ██╗   ██╗██████╗  ██████╗ ██████╗  █████╗ 
 ██╔══██╗██║   ██║██╔══██╗██╔═══██╗██╔══██╗██╔══██╗

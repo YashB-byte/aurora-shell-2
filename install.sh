@@ -114,4 +114,6 @@ EOF
 ZSH_CONFIG="$HOME/.zshrc"
 grep -q "aurora_theme.sh" "$ZSH_CONFIG" || echo "source $INSTALL_PATH/aurora_theme.sh" >> "$ZSH_CONFIG"
 
-echo -e "\033[0;32m✨ Aurora Installed! Run 'source ~/.zshrc' or open a new tab.\033[0m"
+echo -e "\033[0;32m✨ Aurora shell Installed! Running 'source ~/.zshrc' to change effects.\033[0m"
+
+source ~/.zshrc

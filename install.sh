@@ -116,4 +116,6 @@ grep -q "aurora_theme.sh" "$ZSH_CONFIG" || echo "source $INSTALL_PATH/aurora_the
 
 echo -e "\033[0;32m✨ Aurora shell Installed! Running 'source ~/.zshrc' to change effects.\033[0m"
 
+zsh
+
 source ~/.zshrc

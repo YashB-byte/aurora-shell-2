@@ -1,5 +1,18 @@
 #!/bin/bash
-# --- AURORA SYSTEM INSTALLER v4.0.0 ---
+# --- AURORA SYSTEM INSTALLER v4.0.0 (VERBOSE MODE) ---
+
+# Add this at the very top of your script
+VERBOSE=false
+if [[ "$1" == "-v" || "$1" == "--verbose" ]]; then
+    VERBOSE=true
+fi
+
+# Then, when you run a command, you do this:
+if [ "$VERBOSE" = true ]; then
+    git clone https://github.com/YashB-byte/aurora-shell-2.git "$INSTALL_PATH/repo"
+else
+    git clone https://github.com/YashB-byte/aurora-shell-2.git "$INSTALL_PATH/repo" 2>/dev/null
+fi
 
 # 1. SET PASSWORD
 echo -e "\033[0;35m🌌 Aurora Setup: Set your Terminal Lock Password\033[0m"
@@ -16,7 +29,8 @@ fi
 # 2. DEPENDENCY CHECK
 echo "🔍 Checking for required tools..."
 for tool in lolcat pygmentize git; do
-    if ! command -v $tool &> /dev/null; then
+    # Removed /dev/null so you see the tool check output
+    if ! command -v $tool; then
         echo "📥 $tool not found. Attempting install..."
         brew install $tool || pip3 install $tool || echo "⚠️ Please install $tool manually."
     fi
@@ -27,7 +41,8 @@ INSTALL_PATH="$HOME/.aurora-shell_2theme"
 mkdir -p "$INSTALL_PATH"
 
 echo "📥 Cloning Aurora Shell..."
-git clone https://github.com/YashB-byte/aurora-shell-2.git "$INSTALL_PATH/repo" 2>/dev/null || (cd "$INSTALL_PATH/repo" && git pull 2>/dev/null)
+# Removed 2>/dev/null: You will see "destination path already exists" if it's there
+git clone https://github.com/YashB-byte/aurora-shell-2.git "$INSTALL_PATH/repo" || (cd "$INSTALL_PATH/repo" && git pull)
 
 # 4. GENERATE THE THEME FILE
 printf 'CORRECT_PASSWORD="%s"\n' "$NEW_PASS" > "$INSTALL_PATH/aurora_theme.sh"
@@ -49,7 +64,8 @@ done
 
 # --- LOGO & STATS ---
 aurora_display() {
-    local battery=$(pmset -g batt 2>/dev/null | grep -Eo "\d+%" | head -1 || echo "N/A")
+    # Removed 2>/dev/null: You will see internal pmset/battery logs
+    local battery=$(pmset -g batt | grep -Eo "\d+%" | head -1 || echo "N/A")
     echo " 
  █████╗ ██╗   ██╗██████╗  ██████╗ ██████╗  █████╗ 
 ██╔══██╗██║   ██║██╔══██╗██╔═══██╗██╔══██╗██╔══██╗
@@ -120,9 +136,10 @@ grep -q "aurora_theme.sh" "$ZSH_CONFIG" || echo "source $INSTALL_PATH/aurora_the
 
 # 6. SMART ACTIVATION PROMPT
 echo -e "\033[0;32m✨ Aurora shell Installed successfully!\033[0m"
-echo -en "\033[0;35mWould you like to activate it now? (y/n): \033[0m"
+echo -n "Would you like to activate it now? (y/n): "
 read -r activate
-if [[ "$activate" =~ ^[Yy]$ ]]; then
+
+if [[ "$activate" == "y" || "$activate" == "Y" ]]; then
     echo "🚀 Activating..."
     sleep 1
     exec zsh

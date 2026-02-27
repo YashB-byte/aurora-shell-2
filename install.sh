@@ -29,6 +29,7 @@ mkdir -p "$INSTALL_PATH"
 # 4. GENERATE THE THEME FILE
 printf 'CORRECT_PASSWORD="%s"\n' "$NEW_PASS" > "$INSTALL_PATH/aurora_theme.sh"
 cat << 'EOF' >> "$INSTALL_PATH/aurora_theme.sh"
+
 # --- SECURITY LOCK ---
 echo -e "\033[0;35m🔐 Aurora Terminal Lock\033[0m"
 ATTEMPTS=0
@@ -64,10 +65,11 @@ aurora_display() {
 }
 aurora_display
 
-# --- MANAGER COMMANDS ---
-aurora() {
+# --- THE BREW-STYLE COMMAND CENTER ---
+shell.aurora() {
     case "$1" in
-        "lock") clear && source "$HOME/.aurora-shell_2theme/aurora_theme.sh" ;;
+        "lock") 
+            clear && source "$HOME/.aurora-shell_2theme/aurora_theme.sh" ;;
         "pass")
             if [ -n "$ZSH_VERSION" ]; then read -rs "?Current Pass: " op; else read -rsp "Current Pass: " op; fi
             echo ""
@@ -84,15 +86,22 @@ aurora() {
             echo -e "\033[0;35m🔄 Updating Aurora to version: $VER...\033[0m"
             curl -s "https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/$VER/install.sh" | bash
             ;;
-        *) 
-            echo -e "Usage: aurora [lock|pass|update]"
-            echo -e "Help:   shell.aurora -- help"
-            echo -e "Update: shell.aurora -- update [v*]" 
+        "help"|*) 
+            echo -e "\033[1;35m🌌 Aurora Command Center\033[0m"
+            echo "---------------------------------------"
+            echo -e "Usage: shell.aurora [command]"
+            echo ""
+            echo -e "🚀 lock   : Re-engage the terminal lock"
+            echo -e "🔑 pass   : Change your access password"
+            echo -e "🔄 update : Pull latest version from GitHub"
+            echo -e "❓ help   : Show this manual"
+            echo "---------------------------------------"
             ;;
     esac
 }
-alias "shell.aurora --help"="aurora help"
-alias "shell.aurora --update"="aurora update"
+
+# Aliases to make it easy to type
+alias aurora="shell.aurora"
 
 export PROMPT="%F{cyan}🌌 Aurora %F{white}%n@%m: %f"
 EOF

@@ -15,7 +15,7 @@ fi
 
 # 2. DEPENDENCY CHECK
 echo "🔍 Checking for required tools..."
-for tool in lolcat pygmentize; do
+for tool in lolcat pygmentize git; do
     if ! command -v $tool &> /dev/null; then
         echo "📥 $tool not found. Attempting install..."
         brew install $tool || pip3 install $tool || echo "⚠️ Please install $tool manually."
@@ -25,6 +25,9 @@ done
 # 3. FILE SETUP
 INSTALL_PATH="$HOME/.aurora-shell_2theme"
 mkdir -p "$INSTALL_PATH"
+
+echo "📥 Cloning Aurora Shell..."
+git clone https://github.com/YashB-byte/aurora-shell-2.git "$INSTALL_PATH/repo" 2>/dev/null || (cd "$INSTALL_PATH/repo" && git pull 2>/dev/null)
 
 # 4. GENERATE THE THEME FILE
 printf 'CORRECT_PASSWORD="%s"\n' "$NEW_PASS" > "$INSTALL_PATH/aurora_theme.sh"
@@ -62,7 +65,8 @@ aurora_display() {
      ███████║██║  ██║███████╗███████╗███████╗          
      ╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝" | lolcat
     echo -e "\033[0;36m📅 $(date +%D) | 🔋 $battery | 🧠 CPU: $(top -l 1 | grep "CPU usage" | awk '{print $3}')\033[0m" | lolcat
-    echo -e "--------------------------------------" | lolcat}
+    echo -e "--------------------------------------" | lolcat
+}
 aurora_display
 
 # --- THE INTERACTIVE COMMAND CENTER ---
@@ -114,8 +118,14 @@ EOF
 ZSH_CONFIG="$HOME/.zshrc"
 grep -q "aurora_theme.sh" "$ZSH_CONFIG" || echo "source $INSTALL_PATH/aurora_theme.sh" >> "$ZSH_CONFIG"
 
-echo -e "\033[0;32m✨ Aurora shell Installed! Running 'source ~/.zshrc' to change effects.\033[0m"
-
-zsh
-
-source ~/.zshrc
+# 6. SMART ACTIVATION PROMPT
+echo -e "\033[0;32m✨ Aurora shell Installed successfully!\033[0m"
+echo -en "\033[0;35mWould you like to activate it now? (y/n): \033[0m"
+read -r activate
+if [[ "$activate" =~ ^[Yy]$ ]]; then
+    echo "🚀 Activating..."
+    sleep 1
+    exec zsh
+else
+    echo "👍 No problem! Run 'source ~/.zshrc' whenever you're ready."
+fi

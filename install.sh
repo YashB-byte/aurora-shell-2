@@ -65,12 +65,12 @@ aurora_display() {
 }
 aurora_display
 
-# --- THE BREW-STYLE COMMAND CENTER ---
+# --- THE INTERACTIVE COMMAND CENTER ---
 shell.aurora() {
     case "$1" in
-        "lock") 
+        "lock"|"--lock") 
             clear && source "$HOME/.aurora-shell_2theme/aurora_theme.sh" ;;
-        "pass")
+        "pass"|"--pass")
             if [ -n "$ZSH_VERSION" ]; then read -rs "?Current Pass: " op; else read -rsp "Current Pass: " op; fi
             echo ""
             if [ "$op" = "$CORRECT_PASSWORD" ]; then
@@ -81,28 +81,32 @@ shell.aurora() {
             else
                 echo "❌ Wrong password."
             fi ;;
-        "update")
+        "update"|"--update")
             local VER=${2:-"main"}
             echo -e "\033[0;35m🔄 Updating Aurora to version: $VER...\033[0m"
             curl -s "https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/$VER/install.sh" | bash
             ;;
-        "help"|*) 
+        *) 
             echo -e "\033[1;35m🌌 Aurora Command Center\033[0m"
             echo "---------------------------------------"
-            echo -e "Usage: shell.aurora [command]"
-            echo ""
-            echo -e "🚀 lock   : Re-engage the terminal lock"
-            echo -e "🔑 pass   : Change your access password"
-            echo -e "🔄 update : Pull latest version from GitHub"
-            echo -e "❓ help   : Show this manual"
+            echo -e "🚀 [1] lock   : Re-engage terminal lock"
+            echo -e "🔑 [2] pass   : Change your password"
+            echo -e "🔄 [3] update : Pull latest from GitHub"
+            echo -e "❓ [4] help   : Show this manual"
             echo "---------------------------------------"
+            echo -en "\033[0;36mSelect an option (1-4): \033[0m"
+            read -r choice
+            case "$choice" in
+                1) shell.aurora lock ;;
+                2) shell.aurora pass ;;
+                3) shell.aurora update ;;
+                4|*) echo -e "Usage: shell.aurora [lock|pass|update]" ;;
+            esac
             ;;
     esac
 }
 
-# Aliases to make it easy to type
 alias aurora="shell.aurora"
-
 export PROMPT="%F{cyan}🌌 Aurora %F{white}%n@%m: %f"
 EOF
 

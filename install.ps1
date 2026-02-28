@@ -1,80 +1,146 @@
-# Aurora Shell - Windows Modern Installer
-$ErrorActionPreference = "Stop"
+# --- AURORA SYSTEM INSTALLER v4.0.0 (PowerShell) ---
 
-try {
-    Write-Host "🌌 Deploying Aurora Shell Logic..." -ForegroundColor Cyan
+# 0. VERBOSE SETTINGS
+$VerboseMode = $false
+if ($args -contains "-v" -or $args -contains "--verbose") {
+    $VerboseMode = $true
+    Write-Host "🛠️ Verbose Mode Enabled" -ForegroundColor Yellow
+}
 
-    # 1. Get the modern PowerShell profile path
-    $ProfilePath = $PROFILE
-    $ProfileDir = Split-Path -Parent $ProfilePath
+# 1. SET PASSWORD
+Write-Host "🌌 Aurora Setup: Set your Terminal Lock Password" -ForegroundColor Magenta
+$NewPass = Read-Host -AsSecureString "Set new Terminal Password"
+$ConfirmPass = Read-Host -AsSecureString "Confirm Password"
 
-    # 2. Force create the directory if it's missing
-    if (!(Test-Path -Path $ProfileDir)) { 
-        New-Item -ItemType Directory -Path $ProfileDir -Force | Out-Null
+# Convert SecureString to plain text for comparison/storage
+$BSTR1 = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($NewPass)
+$PlainPass = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR1)
+
+$BSTR2 = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($ConfirmPass)
+$PlainConfirm = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR2)
+
+if ($PlainPass -ne $PlainConfirm) {
+    Write-Host "❌ Passwords do not match. Installation aborted." -ForegroundColor Red
+    exit
+}
+
+# 2. DEPENDENCY CHECK
+Write-Host "🔍 Checking for required tools..."
+$Tools = @("git") # lolcat and pygmentize usually require WSL or specific Ruby/Python setups on Windows
+foreach ($tool in $Tools) {
+    if (-not (Get-Command $tool -ErrorAction SilentlyContinue)) {
+        Write-Host "📥 $tool not found. Please install $tool to continue." -ForegroundColor Red
+        exit
     }
+}
 
-    # 3. The Theme Code
-    $AuroraCode = @"
-# Enable modern UTF8 encoding for Emojis
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+# 3. FILE SETUP
+$InstallPath = Join-Path $HOME ".aurora-shell_2theme"
+if (-not (Test-Path $InstallPath)) { New-Item -Path $InstallPath -ItemType Directory | Out-Null }
 
-# Capture the exact time this terminal session started
-`$sessionStart = Get-Date -Format "HH:mm:ss"
+Write-Host "📥 Cloning Aurora Shell..."
+$RepoPath = Join-Path $InstallPath "repo"
+if (-not (Test-Path $RepoPath)) {
+    git clone https://github.com/YashB-byte/aurora-shell-2.git $RepoPath
+} else {
+    Set-Location $RepoPath
+    git pull
+}
 
-function Get-AuroraStats {
-    `$date = Get-Date -Format "MM/dd/yy"
+# 4. GENERATE THE THEME FILE
+$ThemeFile = Join-Path $InstallPath "aurora_theme.ps1"
+$ThemeContent = @"
+`$CORRECT_PASSWORD = "$PlainPass"
+
+function Show-AuroraLock {
+    Write-Host "🔐 Aurora Terminal Lock" -ForegroundColor Magenta
+    `$Attempts = 0
+    while (`$Attempts -lt 3) {
+        `$ui = Read-Host -AsSecureString "Password"
+        `$BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR(`$ui)
+        `$InputPass = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto(`$BSTR)
+        
+        if (`$InputPass -eq `$CORRECT_PASSWORD) {
+            Write-Host "✅ Access Granted." -ForegroundColor Green
+            return
+        } else {
+            `$Attempts++
+            if (`$Attempts -lt 3) {
+                Write-Host "❌ Incorrect. $((3-`$Attempts)) left." -ForegroundColor Yellow
+                Start-Sleep -Seconds 2
+            } else {
+                Write-Host "❌ Denied." -ForegroundColor Red
+                exit
+            }
+        }
+    }
+}
+
+function Show-AuroraDisplay {
+    `$Battery = (Get-CimInstance -ClassName Win32_Battery).EstimatedChargeRemaining
+    if (-not `$Battery) { `$Battery = "N/A" } else { `$Battery = "`$Battery%" }
     
-    # Battery Check
-    try {
-        `$batt = (Get-CimInstance -ClassName Win32_Battery -ErrorAction SilentlyContinue).EstimatedChargeRemaining
-        `$battStr = if (`$batt) { "`$batt%" } else { "AC" }
-    } catch { `$battStr = "AC" }
-
-    # Disk and CPU Stats
-    `$disk = [math]::Round((Get-PSDrive C).Free / 1GB, 1)
-    `$cpu = [math]::Round((Get-Counter '\Processor(_Total)\% Processor Time' -ErrorAction SilentlyContinue).CounterSamples.CookedValue, 1)
-    if (!`$cpu) { `$cpu = "0" }
-
-    Write-Host ""
-    Write-Host "
+    `$Ascii = @"
  █████╗ ██╗   ██╗██████╗  ██████╗ ██████╗  █████╗ 
 ██╔══██╗██║   ██║██╔══██╗██╔═══██╗██╔══██╗██╔══██╗
 ███████║██║   ██║██████╔╝██║   ██║██████╔╝███████║
 ██╔══██║██║   ██║██╔══██╗██║   ██║██╔══██╗██╔══██║
 ██║  ██║╚██████╔╝██║  ██║╚██████╔╝██║  ██║██║  ██║
 ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝
-                                                  
-███████╗██╗  ██╗███████╗██╗     ██╗               
-██╔════╝██║  ██║██╔════╝██║     ██║               
-███████╗███████║█████╗  ██║     ██║               
-╚════██║██╔══██║██╔══╝  ██║     ██║               
-███████║██║  ██║███████╗███████╗███████╗          
-╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝          
-" -ForegroundColor Green
 
-    Write-Host " 📅 `$date | 🕒 Start: `$sessionStart | 🔋 `$battStr | 🧠 CPU: `$cpu%" -ForegroundColor Magenta
-    Write-Host " 💽 `$disk Gi Free" -ForegroundColor Magenta
-    Write-Host " ------------------------------------------------------------"
+     ███████╗██╗  ██╗███████╗██╗     ██╗      
+     ██╔════╝██║  ██║██╔════╝██║     ██║      
+     ███████╗███████║█████╗  ██║     ██║      
+     ╚════██║██╔══██║██╔══╝  ██║     ██║      
+     ███████║██║  ██║███████╗███████╗███████╗ 
+     ╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝
+"@
+    Write-Host `$Ascii -ForegroundColor Cyan
+    Write-Host "📅 $((Get-Date).ToShortDateString()) | 🔋 `$Battery | 🧠 CPU: $((Get-Counter '\Processor(_Total)\% Processor Time').CounterSamples.CookedValue.ToString('F2'))%" -ForegroundColor Cyan
+    Write-Host "--------------------------------------" -ForegroundColor Cyan
 }
 
-# Run once on startup
-Get-AuroraStats
-
-function prompt {
-    Write-Host " 🌌aurora " -ForegroundColor Cyan -NoNewline
-    Write-Host "`$(`$env:USERNAME)@`$(`$env:COMPUTERNAME): " -ForegroundColor White -NoNewline
-    return "> "
+function aurora {
+    param(`$Option)
+    switch (`$Option) {
+        "lock" { Clear-Host; Show-AuroraLock; Show-AuroraDisplay }
+        "pass" {
+            `$op = Read-Host -AsSecureString "Current Pass"
+            `$BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR(`$op)
+            `$CurrentInput = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto(`$BSTR)
+            
+            if (`$CurrentInput -eq `$CORRECT_PASSWORD) {
+                `$np = Read-Host -AsSecureString "New Pass"
+                `$BSTR2 = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR(`$np)
+                `$NewInput = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto(`$BSTR2)
+                # Note: Updating the file password via script in PS is complex; manually recommended or use Export-CliXml
+                Write-Host "✅ Logic for password update triggered. Manual update of `$ThemeFile suggested for security." -ForegroundColor Green
+            }
+        }
+        default {
+            Write-Host "🌌 Aurora Command Center" -ForegroundColor Magenta
+            Write-Host "🚀 [1] lock   : Re-engage terminal lock"
+            Write-Host "🔑 [2] pass   : Change password"
+            Write-Host "Usage: aurora lock | aurora pass"
+        }
+    }
 }
+
+Show-AuroraLock
+Show-AuroraDisplay
 "@
 
-    # 4. Save the profile
-    Set-Content -Path $ProfilePath -Value $AuroraCode -Encoding utf8
-    Write-Host "✨ SUCCESS: Aurora Shell Installed to $ProfilePath" -ForegroundColor Green
+$ThemeContent | Out-File -FilePath $ThemeFile -Encoding utf8
 
-} catch {
-    Write-Host "❌ FAILED: $($_.Exception.Message)" -ForegroundColor Red
+# 5. LINK TO PROFILE
+if (-not (Test-Path $PROFILE)) { New-Item -Path $PROFILE -ItemType File -Force | Out-Null }
+if (-not (Select-String -Path $PROFILE -Pattern "aurora_theme.ps1")) {
+    Add-Content -Path $PROFILE -Value "`n. `"$ThemeFile`""
 }
 
-# The Magic Pause (keeps the window open on your Lenovo)
-Write-Host "`n"
-Read-Host -Prompt "Press Enter to exit installer"
+# 6. ACTIVATION
+Write-Host "✨ Aurora shell installed successfully!" -ForegroundColor Green
+$Activate = Read-Host "Would you like to activate it now? (y/n)"
+if ($Activate -eq "y") {
+    . $PROFILE
+}

@@ -49,7 +49,7 @@ winget install Microsoft.PowerShell.Preview
 
 **Option 1: command line install**
 ```powershell
-Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.ps1'))
+sno Bypass -Sc Process -F; irm "https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.ps1" | iex
 ```
 
 **Option 2: download installer (.exe)**

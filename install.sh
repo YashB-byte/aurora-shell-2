@@ -1,12 +1,10 @@
 #!/bin/bash
-# --- AURORA SYSTEM INSTALLER v4.2.0 ---
+# --- AURORA SYSTEM INSTALLER v4.3.0 ---
+# Optimized for macOS (Zsh) and Linux (Bash)
 
 # 0. VERBOSE SETTINGS
 VERBOSE=false
-if [[ "$1" == "-v" || "$1" == "--verbose" ]]; then
-    VERBOSE=true
-    echo -e "\033[0;33m🛠️ Verbose Mode Enabled\033[0m"
-fi
+[[ "$1" == "-v" || "$1" == "--verbose" ]] && VERBOSE=true && echo -e "\033[0;33m🛠️ Verbose Mode Enabled\033[0m"
 
 # 1. SET PASSWORD
 echo -e "\033[0;35m🌌 Aurora Setup: Set your Terminal Lock Password\033[0m"
@@ -72,7 +70,7 @@ while [ $ATTEMPTS -lt 3 ]; do
         ATTEMPTS=$((ATTEMPTS + 1))
         REMAINING=$((3 - ATTEMPTS))
         if [ $ATTEMPTS -lt 3 ]; then
-            echo -e "\033[0;33m❌ Incorrect. $REMAINING attempts left.\033[0m"
+            echo -e "\033[0;33m❌ Incorrect. $REMAINING left.\033[0m"
         else
             echo -e "\033[0;31m❌ Access Denied. Locking session.\033[0m"
             exit 1
@@ -85,6 +83,7 @@ aurora_display() {
     local date_str=$(date +"%m/%d/%y")
     local battery=$(pmset -g batt 2>/dev/null | grep -Eo "\d+%" | head -1 || echo "N/A")
     local cpu_usage=$(top -l 1 | grep "CPU usage" | awk '{print $3}' | sed 's/%//')
+    local free_space=$(df -h / | awk 'NR==2 {print $4}')
     
     echo -e "
               █████╗ ██╗   ██╗██████╗  ██████╗ ██████╗  █████╗ 
@@ -101,11 +100,12 @@ aurora_display() {
                  ███████║██║  ██║███████╗███████╗███████╗          
                  ╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝" | lolcat
 
-    echo -e "                📅 $date_str | 🔋 $battery | 🧠 CPU: $cpu_usage%"
-    echo "                 --------------------------------------"
+    echo -e " 📅 $date_str | 🔋 $battery | 🧠 CPU: $cpu_usage% | 📂 Free: $free_space" | lolcat
+    echo -e " ------------------------------------------------------------\n" | lolcat
 }
 
 # Run the display
+clear
 aurora_display
 
 # --- LOAD AURORA CORE ---

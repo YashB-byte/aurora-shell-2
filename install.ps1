@@ -66,7 +66,7 @@ function Show-AuroraLock {
         } else {
             `$Attempts++
             if (`$Attempts -lt 3) {
-                Write-Host "❌ Incorrect. $((3-`$Attempts)) left." -ForegroundColor Yellow
+                Write-Host "❌ Incorrect. $((3-$Attempts)) left." -ForegroundColor Yellow
                 Start-Sleep -Seconds 2
             } else {
                 Write-Host "❌ Denied." -ForegroundColor Red
@@ -144,3 +144,4 @@ $Activate = Read-Host "Would you like to activate it now? (y/n)"
 if ($Activate -eq "y") {
     . $PROFILE
 }
+

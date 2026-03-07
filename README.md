@@ -30,7 +30,7 @@ Ultra-Clean Prompt: Minimalist cyan-themed prompt showing user@machine.
 ```bash
 curl -s https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.sh | bash
 ```
-run with "-v" to see everything that is going on
+run with "```-v```" at the end of command to see everything that is going on
 
 🪟 For Windows (PowerShell 7+)
 
@@ -49,7 +49,7 @@ winget install Microsoft.PowerShell.Preview
 
 **Option 1: command line install**
 ```powershell
-sno Bypass -Sc Process -F; irm "https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.ps1" | iex
+Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.ps1'))
 ```
 
 **Option 2: download installer (.exe)**

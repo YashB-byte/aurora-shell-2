@@ -1,10 +1,10 @@
 #!/bin/bash
-# --- AURORA SYSTEM INSTALLER v4.3.5 ---
-# Dynamic Centering | Auto-Purge | Zsh-Optimized
+# --- AURORA SYSTEM INSTALLER v4.3.6 ---
 
-# 0. VERBOSE SETTINGS
-VERBOSE=false
-[[ "$1" == "-v" || "$1" == "--verbose" ]] && VERBOSE=true && echo -e "\033[0;33m🛠️ Verbose Mode Enabled\033[0m"
+# 0. VERBOSE & PRE-CLEAN
+INSTALL_PATH="$HOME/.aurora-shell_2theme"
+[[ -d "$INSTALL_PATH" ]] && rm -rf "$INSTALL_PATH"
+mkdir -p "$INSTALL_PATH"
 
 # 1. SET PASSWORD
 echo -e "\033[0;35m🌌 Aurora Setup: Set your Terminal Lock Password\033[0m"
@@ -13,38 +13,19 @@ echo ""
 read -rs -p "Confirm Password: " CONFIRM_PASS </dev/tty
 echo ""
 
-if [ "$NEW_PASS" != "$CONFIRM_PASS" ]; then
-    echo -e "\033[0;31m❌ Passwords do not match. Installation aborted.\033[0m"
-    exit 1
-fi
+[[ "$NEW_PASS" != "$CONFIRM_PASS" ]] && echo "❌ Mismatch!" && exit 1
 
 # 2. DEPENDENCY CHECK
 echo "🔍 Checking for required tools..."
 for tool in lolcat pygmentize git; do
-    if ! command -v $tool &>/dev/null; then
-        echo "📥 $tool not found. Attempting install..."
-        if [[ "$OSTYPE" == "darwin"* ]]; then
-            brew install $tool || pip3 install $tool
-        else
-            sudo apt-get install -y $tool || pip3 install $tool
-        fi
-    fi
+    command -v $tool &>/dev/null || brew install $tool || pip3 install $tool
 done
 
-# 3. FILE SETUP (PURGE & CLONE)
-INSTALL_PATH="$HOME/.aurora-shell_2theme"
-
-if [ -d "$INSTALL_PATH" ]; then
-    echo "🧹 Purging old Aurora files to ensure a clean sync..."
-    rm -rf "$INSTALL_PATH"
-fi
-
-mkdir -p "$INSTALL_PATH"
-
+# 3. CLONE
 echo "📥 Cloning Aurora Shell..."
 git clone --progress https://github.com/YashB-byte/aurora-shell-2.git "$INSTALL_PATH/repo"
 
-# 4. GENERATE THE THEME FILE
+# 4. GENERATE THEME
 printf 'CORRECT_PASSWORD="%s"\n' "$NEW_PASS" > "$INSTALL_PATH/aurora_theme.sh"
 
 cat << 'EOF' >> "$INSTALL_PATH/aurora_theme.sh"
@@ -52,41 +33,26 @@ cat << 'EOF' >> "$INSTALL_PATH/aurora_theme.sh"
 echo -e "\033[0;35m🔐 Aurora Terminal Lock\033[0m"
 ATTEMPTS=0
 while [ $ATTEMPTS -lt 3 ]; do
-    if [ -n "$ZSH_VERSION" ]; then 
-        read -rs "ui?Password: " </dev/tty
-    else 
-        read -rsp "Password: " ui </dev/tty
-    fi
+    if [ -n "$ZSH_VERSION" ]; then read -rs "ui?Password: " </dev/tty; else read -rsp "Password: " ui </dev/tty; fi
     echo ""
-    
     if [ "$(echo "$ui" | xargs)" = "$CORRECT_PASSWORD" ]; then
-        echo -e "\033[0;32m✅ Access Granted.\033[0m"
-        break
+        echo -e "\033[0;32m✅ Access Granted.\033[0m"; break
     else
         ATTEMPTS=$((ATTEMPTS + 1))
-        REMAINING=$((3 - ATTEMPTS))
-        if [ $ATTEMPTS -lt 3 ]; then
-            echo -e "\033[0;33m❌ Incorrect. $REMAINING left.\033[0m"
-        else
-            echo -e "\033[0;31m❌ Access Denied.\033[0m"
-            exit 1
-        fi
+        [[ $ATTEMPTS -eq 3 ]] && echo "❌ Access Denied." && exit 1
     fi
 done
 
-# --- AURORA DISPLAY LOGIC ---
+# --- CENTERED DISPLAY ---
 aurora_display() {
     local date_str=$(date +"%m/%d/%y")
     local battery=$(pmset -g batt 2>/dev/null | grep -Eo "\d+%" | head -1 || echo "N/A")
     local cpu_usage=$(top -l 1 | grep "CPU usage" | awk '{print $3}' | sed 's/%//')
     local free_space=$(df -h / | awk 'NR==2 {print $4}')
     
-    # 1. Define Strings
     local stats_line="📅 $date_str | 🔋 $battery | 🧠 CPU: $cpu_usage% | 📂 Free: $free_space"
-    local separator="------------------------------------------------------------"
     local term_width=$(tput cols)
 
-    # 2. Print Logo (Static Indentation for center-look)
     echo -e "
               █████╗ ██╗   ██╗██████╗  ██████╗ ██████╗  █████╗ 
              ██╔══██╗██║   ██║██╔══██╗██╔═══██╗██╔══██╗██╔══██╗
@@ -102,141 +68,18 @@ aurora_display() {
                  ███████║██║  ██║███████╗███████╗███████╗          
                  ╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝" | lolcat
 
-    # 3. Print Centered Stats & Separator
     printf "%*s\n" $(( (${#stats_line} + term_width) / 2 )) "$stats_line" | lolcat
-    printf "%*s\n\n" $(( (${#separator} + term_width) / 2 )) "$separator" | lolcat
-}
-
-# Run the display
-clear
-aurora_display
-
-# --- LOAD AURORA CORE ---
-if [ -f "$HOME/.aurora-shell_2theme/repo/aurora_core.sh" ]; then
-    source "$HOME/.aurora-shell_2theme/repo/aurora_core.sh"
-fi
-EOF
-
-# 5. INJECT INTO CONFIG
-SHELL_CONFIG="$HOME/.zshrc"
-[[ "$SHELL" == *"bash"* ]] && SHELL_CONFIG="$HOME/.bashrc"
-LINE_TO_ADD="source $INSTALL_PATH/aurora_theme.sh"
-
-if ! grep -qF "$LINE_TO_ADD" "$SHELL_CONFIG"; then
-    echo "$LINE_TO_ADD" >> "$SHELL_CONFIG"
-fi
-
-echo -e "\033[0;32m✨ Aurora shell installed successfully!\033[0m"
-read -p "Would you like to activate it now? (y/n): " ACTIVATE </dev/tty
-if [[ "$ACTIVATE" =~ ^[Yy]$ ]]; then
-    source "$SHELL_CONFIG"
-else
-    echo "👍 Run 'source $SHELL_CONFIG' when ready."
-fiif [ -d "$INSTALL_PATH" ]; then
-    echo "🧹 Purging old Aurora files to ensure a clean sync..."
-    rm -rf "$INSTALL_PATH"
-fi
-
-mkdir -p "$INSTALL_PATH"
-
-echo "📥 Cloning Aurora Shell..."
-if [ "$VERBOSE" = true ]; then
-    git clone --verbose --progress https://github.com/YashB-byte/aurora-shell-2.git "$INSTALL_PATH/repo"
-else
-    git clone --progress https://github.com/YashB-byte/aurora-shell-2.git "$INSTALL_PATH/repo"
-fi
-
-# 4. GENERATE THE THEME FILE
-printf 'CORRECT_PASSWORD="%s"\n' "$NEW_PASS" > "$INSTALL_PATH/aurora_theme.sh"
-
-cat << 'EOF' >> "$INSTALL_PATH/aurora_theme.sh"
-# --- AURORA SECURITY LOCK ---
-echo -e "\033[0;35m🔐 Aurora Terminal Lock\033[0m"
-ATTEMPTS=0
-while [ $ATTEMPTS -lt 3 ]; do
-    if [ -n "$ZSH_VERSION" ]; then 
-        read -rs "ui?Password: " </dev/tty
-    else 
-        read -rsp "Password: " ui </dev/tty
-    fi
     echo ""
-    
-    if [ "$(echo "$ui" | xargs)" = "$CORRECT_PASSWORD" ]; then
-        echo -e "\033[0;32m✅ Access Granted.\033[0m"
-        break
-    else
-        ATTEMPTS=$((ATTEMPTS + 1))
-        REMAINING=$((3 - ATTEMPTS))
-        if [ $ATTEMPTS -lt 3 ]; then
-            echo -e "\033[0;33m❌ Incorrect. $REMAINING left.\033[0m"
-        else
-            echo -e "\033[0;31m❌ Access Denied. Locking session.\033[0m"
-            exit 1
-        fi
-    fi
-done
-
-# --- AURORA DISPLAY LOGIC ---
-aurora_display() {
-    local date_str=$(date +"%m/%d/%y")
-    local battery=$(pmset -g batt 2>/dev/null | grep -Eo "\d+%" | head -1 || echo "N/A")
-    local cpu_usage=$(top -l 1 | grep "CPU usage" | awk '{print $3}' | sed 's/%//')
-    local free_space=$(df -h / | awk 'NR==2 {print $4}')
-    
-    # Define the stats string
-    local stats_line="📅 $date_str | 🔋 $battery | 🧠 CPU: $cpu_usage% | 📂 Free: $free_space"
-    local separator="------------------------------------------------------------"
-    
-    # ASCII Art Block
-    echo -e "
-              █████╗ ██╗   ██╗██████╗  ██████╗ ██████╗  █████╗ 
-             ██╔══██╗██║   ██║██╔══██╗██╔═══██╗██╔══██╗██╔══██╗
-             ███████║██║   ██║██████╔╝██║   ██║██████╔╝███████║
-             ██╔══██║██║   ██║██╔══██╗██║   ██║██╔══██╗██╔══██║
-             ██║  ██║╚██████╔╝██║  ██║╚██████╔╝██║  ██║██║  ██║
-             ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝
-                                                               
-                 ███████╗██╗  ██╗███████╗██╗     ██╗                
-                 ██╔════╝██║  ██║██╔════╝██║     ██║                
-                 ███████╗███████║█████╗  ██║     ██║                
-                 ╚════██║██╔══██║██╔══╝  ██║     ██║                
-                 ███████║██║  ██║███████╗███████╗███████╗          
-                 ╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝" | lolcat
-
-    # Dynamic Centering Logic
-    local term_width=$(tput cols)
-    
-    # Center the Stats Line
-    printf "%*s\n" $(( (${#stats_line} + term_width) / 2 )) "$stats_line" | lolcat
-    
-    # Center the Separator
-    printf "%*s\n\n" $(( (${#separator} + term_width) / 2 )) "$separator" | lolcat
 }
 
-# Run the display
-clear
-aurora_display
+clear && aurora_display
 
-# --- LOAD AURORA CORE ---
-if [ -f "$HOME/.aurora-shell_2theme/repo/aurora_core.sh" ]; then
-    source "$HOME/.aurora-shell_2theme/repo/aurora_core.sh"
-fi
+[[ -f "$HOME/.aurora-shell_2theme/repo/aurora_core.sh" ]] && source "$HOME/.aurora-shell_2theme/repo/aurora_core.sh"
 EOF
 
-# 5. INJECT INTO CONFIG
-SHELL_CONFIG="$HOME/.zshrc"
-[[ "$SHELL" == *"bash"* ]] && SHELL_CONFIG="$HOME/.bashrc"
-LINE_TO_ADD="source $INSTALL_PATH/aurora_theme.sh"
-
-if ! grep -qF "$LINE_TO_ADD" "$SHELL_CONFIG"; then
-    echo "$LINE_TO_ADD" >> "$SHELL_CONFIG"
+# 5. LINK TO ZSHRC
+if ! grep -q "aurora_theme.sh" "$HOME/.zshrc"; then
+    echo "source $INSTALL_PATH/aurora_theme.sh" >> "$HOME/.zshrc"
 fi
 
-echo -e "\033[0;32m✨ Aurora shell installed successfully!\033[0m"
-read -p "Would you like to activate it now? (y/n): " ACTIVATE </dev/tty
-if [[ "$ACTIVATE" =~ ^[Yy]$ ]]; then
-    zsh
-    source "$SHELL_CONFIG"
-else
-    echo "👍 Run 'source $SHELL_CONFIG' when ready."
-fi
+echo -e "\033[0;32m✨ Installation complete. Run 'source ~/.zshrc' to activate.\033[0m"

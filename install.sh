@@ -85,6 +85,11 @@ aurora_display() {
     local cpu_usage=$(top -l 1 | grep "CPU usage" | awk '{print $3}' | sed 's/%//')
     local free_space=$(df -h / | awk 'NR==2 {print $4}')
     
+    # Define the stats string
+    local stats_line="📅 $date_str | 🔋 $battery | 🧠 CPU: $cpu_usage% | 📂 Free: $free_space"
+    local separator="------------------------------------------------------------"
+    
+    # ASCII Art Block
     echo -e "
               █████╗ ██╗   ██╗██████╗  ██████╗ ██████╗  █████╗ 
              ██╔══██╗██║   ██║██╔══██╗██╔═══██╗██╔══██╗██╔══██╗
@@ -100,8 +105,14 @@ aurora_display() {
                  ███████║██║  ██║███████╗███████╗███████╗          
                  ╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝" | lolcat
 
-    echo -e " 📅 $date_str | 🔋 $battery | 🧠 CPU: $cpu_usage% | 📂 Free space: $free_space" | lolcat
-    echo -e " ------------------------------------------------------------\n" | lolcat
+    # Dynamic Centering Logic
+    local term_width=$(tput cols)
+    
+    # Center the Stats Line
+    printf "%*s\n" $(( (${#stats_line} + term_width) / 2 )) "$stats_line" | lolcat
+    
+    # Center the Separator
+    printf "%*s\n\n" $(( (${#separator} + term_width) / 2 )) "$separator" | lolcat
 }
 
 # Run the display

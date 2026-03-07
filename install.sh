@@ -100,7 +100,7 @@ aurora_display() {
                  ███████║██║  ██║███████╗███████╗███████╗          
                  ╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝" | lolcat
 
-    echo -e " 📅 $date_str | 🔋 $battery | 🧠 CPU: $cpu_usage% | 📂 Free: $free_space" | lolcat
+    echo -e " 📅 $date_str | 🔋 $battery | 🧠 CPU: $cpu_usage% | 📂 Free space: $free_space" | lolcat
     echo -e " ------------------------------------------------------------\n" | lolcat
 }
 

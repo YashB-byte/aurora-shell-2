@@ -42,3 +42,4 @@ shell.aurora() {
 }
 
 alias aurora="shell.aurora"
+alias auseaia="bash ~/aurora-shell-2/chat.sh"

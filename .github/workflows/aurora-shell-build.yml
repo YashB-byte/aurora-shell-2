@@ -24,22 +24,12 @@ jobs:
 
       - name: Prepare Scripts
         run: |
-          mkdir -p build/scripts
-          cp install.sh build/scripts/postinstall
-          chmod +x build/scripts/postinstall
-
-      - name: Create PKG
-        run: |
-          pkgbuild --identifier com.yashb.aurora \
-                   --version ${{ steps.version.outputs.version }} \
-                   --scripts build/scripts \
-                   --nopayload \
-                   AuroraShell.pkg
-
-      - name: Create DMG with PKG inside
-        run: |
           mkdir -p dmg-contents
-          cp AuroraShell.pkg dmg-contents/
+          cp install.sh dmg-contents/
+          chmod +x dmg-contents/install.sh
+
+      - name: Create DMG with installer script
+        run: |
           hdiutil create -volname "Aurora Shell ${{ steps.version.outputs.version }}" \
                          -srcfolder dmg-contents \
                          -ov -format UDZO \

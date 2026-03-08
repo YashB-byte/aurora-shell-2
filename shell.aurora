@@ -18,7 +18,8 @@ shell.aurora() {
             fi ;;
         "update"|"--update")
             local VER=${2:-"main"}
-            echo -e "\033[0;35m🔄 Updating Aurora to version: $VER...\033[0m"
+            local VERSION=$(curl -s "https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/$VER/install.sh" | grep "AURORA SYSTEM INSTALLER" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+')
+            echo -e "\033[0;35m🔄 Updating Aurora Shell to $VERSION from branch: $VER...\033[0m"
             curl -s "https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/$VER/install.sh" | bash
             ;;
         *) 

@@ -9,9 +9,8 @@ Session Tracking: Displays a "Start Time" so you know exactly when you began you
 
 Cross-Platform: Tailored experiences for both Mac and Windows environments.
 
-Ultra-Clean Prompt: Minimalist cyan-themed prompt showing user@machine.
-
 🚀 Installation
+
 🍎 For macOS (Zsh)
 
 **Option 1: Download Installer (.dmg)**

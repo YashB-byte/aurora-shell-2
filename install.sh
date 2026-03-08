@@ -14,9 +14,9 @@ if [ -n "$PRESERVED_PASSWORD" ]; then
     CONFIRM_PASS="$PRESERVED_PASSWORD"
 else
     echo -e "\033[0;35m🌌 Aurora Setup: Set your Terminal Lock Password\033[0m"
-    read -rs -p "Set new Terminal Password: " NEW_PASS </dev/tty
+    read -rs -p "Set new Terminal Password: " NEW_PASS
     echo ""
-    read -rs -p "Confirm Password: " CONFIRM_PASS </dev/tty
+    read -rs -p "Confirm Password: " CONFIRM_PASS
     echo ""
 fi
 

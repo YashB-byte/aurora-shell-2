@@ -131,8 +131,7 @@ fi
 echo -e "\033[0;32m✨ Aurora shell installed successfully!\033[0m"
 read -p "Would you like to activate it now? (y/n): " ACTIVATE </dev/tty
 if [[ "$ACTIVATE" =~ ^[Yy]$ ]]; then
-    #!/bin/zsh
-    source "$SHELL_CONFIG"
+    zsh -c "source ~/.zshrc"
 else
     echo "👍 Run 'source $SHELL_CONFIG' when ready."
 fi

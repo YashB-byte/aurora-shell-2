@@ -41,7 +41,10 @@ fi
 mkdir -p "$INSTALL_PATH"
 
 echo "📥 Cloning Aurora Shell..."
-git clone --progress https://github.com/YashB-byte/aurora-shell-2.git "$INSTALL_PATH/repo"
+if ! git clone --progress https://github.com/YashB-byte/aurora-shell-2.git "$INSTALL_PATH/repo"; then
+    echo -e "\033[0;31m❌ Failed to clone repository. Check your internet connection.\033[0m"
+    exit 1
+fi
 
 # 4. GENERATE THE THEME FILE
 printf 'CORRECT_PASSWORD="%s"\n' "$NEW_PASS" > "$INSTALL_PATH/aurora_theme.sh"

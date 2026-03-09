@@ -39,9 +39,7 @@ shell.aurora() {
             TEMP_INSTALLER=$(mktemp)
             trap "rm -f '$TEMP_INSTALLER'" EXIT
             curl -s "https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/$VER/install.sh" > "$TEMP_INSTALLER"
-            export PRESERVED_PASSWORD="$CORRECT_PASSWORD"
-            bash "$TEMP_INSTALLER"
-            unset PRESERVED_PASSWORD
+            PRESERVED_PASSWORD="$CORRECT_PASSWORD" bash "$TEMP_INSTALLER"
             trap - EXIT
             rm -f "$TEMP_INSTALLER"
             ;;

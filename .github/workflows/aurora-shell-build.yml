@@ -100,15 +100,43 @@ jobs:
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Create ZIP with installer script
+      - name: Create NSIS Installer Script
         shell: bash
         run: |
-          mkdir -p aurora-windows
-          cp install.ps1 aurora-windows/
-          cp aurora_theme.ps1 aurora-windows/
-          cp README.md aurora-windows/
-          cd aurora-windows
-          7z a ../AuroraShell-${{ steps.version.outputs.version }}-Windows.zip *
+          cat > installer.nsi << 'EOF'
+          !include "MUI2.nsh"
+          
+          Name "Aurora Shell"
+          OutFile "AuroraShell-Installer.exe"
+          InstallDir "$LOCALAPPDATA\AuroraShell"
+          RequestExecutionLevel user
+          
+          !insertmacro MUI_PAGE_WELCOME
+          !insertmacro MUI_PAGE_DIRECTORY
+          !insertmacro MUI_PAGE_INSTFILES
+          !insertmacro MUI_PAGE_FINISH
+          
+          !insertmacro MUI_LANGUAGE "English"
+          
+          Section "Install"
+            SetOutPath "$INSTDIR"
+            File "install.ps1"
+            File "aurora_theme.ps1"
+            File "README.md"
+            
+            ExecWait 'powershell -ExecutionPolicy Bypass -File "$INSTDIR\install.ps1"'
+          SectionEnd
+          EOF
+
+      - name: Build EXE with NSIS
+        run: |
+          choco install nsis -y
+          makensis installer.nsi
+
+      - name: Create ZIP with EXE inside
+        shell: bash
+        run: |
+          7z a AuroraShell-${{ steps.version.outputs.version }}-Windows.zip AuroraShell-Installer.exe
 
       - name: Upload ZIP
         uses: actions/upload-artifact@v4

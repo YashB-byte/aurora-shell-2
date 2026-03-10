@@ -69,24 +69,26 @@ if (-not (Test-Path $RepoPath)) {
 
 # 5. GENERATE THEME FILE
 $ThemeFile = Join-Path $InstallPath "aurora_theme.ps1"
-$ThemeContent = @"
-`$CORRECT_PASSWORD = "$PlainPass"
+
+# Create theme file content
+$ThemeScript = @'
+$CORRECT_PASSWORD = "PASSWORD_PLACEHOLDER"
 
 function Show-AuroraLock {
     Write-Host "🔐 Aurora Terminal Lock" -ForegroundColor Magenta
-    `$Attempts = 0
-    while (`$Attempts -lt 3) {
-        `$ui = Read-Host -AsSecureString "Password"
-        `$BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR(`$ui)
-        `$InputPass = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto(`$BSTR)
+    $Attempts = 0
+    while ($Attempts -lt 3) {
+        $ui = Read-Host -AsSecureString "Password"
+        $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($ui)
+        $InputPass = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
         
-        if (`$InputPass -eq `$CORRECT_PASSWORD) {
+        if ($InputPass -eq $CORRECT_PASSWORD) {
             Write-Host "✅ Access Granted." -ForegroundColor Green
             return
         } else {
-            `$Attempts++
-            if (`$Attempts -lt 3) {
-                Write-Host "❌ Incorrect. `$((3-`$Attempts)) left." -ForegroundColor Yellow
+            $Attempts++
+            if ($Attempts -lt 3) {
+                Write-Host "❌ Incorrect. $((3-$Attempts)) left." -ForegroundColor Yellow
                 Start-Sleep -Seconds 2
             } else {
                 Write-Host "❌ Denied." -ForegroundColor Red
@@ -97,71 +99,72 @@ function Show-AuroraLock {
 }
 
 function Show-AuroraDisplay {
-    `$Battery = (Get-CimInstance -ClassName Win32_Battery -ErrorAction SilentlyContinue).EstimatedChargeRemaining
-    if (-not `$Battery) { `$Battery = "AC" } else { `$Battery = "`$Battery%" }
+    $Battery = (Get-CimInstance -ClassName Win32_Battery -ErrorAction SilentlyContinue).EstimatedChargeRemaining
+    if (-not $Battery) { $Battery = "AC" } else { $Battery = "$Battery%" }
     
-    `$Cpu = [math]::Round((Get-Counter '\Processor(_Total)\% Processor Time' -ErrorAction SilentlyContinue).CounterSamples.CookedValue, 2)
-    `$Disk = [math]::Round((Get-PSDrive C).Free / 1GB, 2)
+    $Cpu = [math]::Round((Get-Counter '\Processor(_Total)\% Processor Time' -ErrorAction SilentlyContinue).CounterSamples.CookedValue, 2)
+    $Disk = [math]::Round((Get-PSDrive C).Free / 1GB, 2)
     
-    Write-Host ' █████╗ ██╗   ██╗██████╗  ██████╗ ██████╗  █████╗ ' -ForegroundColor Cyan
-    Write-Host '██╔══██╗██║   ██║██╔══██╗██╔═══██╗██╔══██╗██╔══██╗' -ForegroundColor Cyan
-    Write-Host '███████║██║   ██║██████╔╝██║   ██║██████╔╝███████║' -ForegroundColor Cyan
-    Write-Host '██╔══██║██║   ██║██╔══██╗██║   ██║██╔══██╗██╔══██║' -ForegroundColor Cyan
-    Write-Host '██║  ██║╚██████╔╝██║  ██║╚██████╔╝██║  ██║██║  ██║' -ForegroundColor Cyan
-    Write-Host '╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝' -ForegroundColor Cyan
-    Write-Host '' -ForegroundColor Cyan
-    Write-Host '     ███████╗██╗  ██╗███████╗██╗     ██╗      ' -ForegroundColor Cyan
-    Write-Host '     ██╔════╝██║  ██║██╔════╝██║     ██║      ' -ForegroundColor Cyan
-    Write-Host '     ███████╗███████║█████╗  ██║     ██║      ' -ForegroundColor Cyan
-    Write-Host '     ╚════██║██╔══██║██╔══╝  ██║     ██║      ' -ForegroundColor Cyan
-    Write-Host '     ███████║██║  ██║███████╗███████╗███████╗ ' -ForegroundColor Cyan
-    Write-Host '     ╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝' -ForegroundColor Cyan
-    Write-Host "📅 `$((Get-Date).ToShortDateString()) | 🔋 `$Battery | 🧠 CPU: `$Cpu% | 💽 `${Disk}GB Free" -ForegroundColor Cyan
+    Write-Host " █████╗ ██╗   ██╗██████╗  ██████╗ ██████╗  █████╗ " -ForegroundColor Cyan
+    Write-Host "██╔══██╗██║   ██║██╔══██╗██╔═══██╗██╔══██╗██╔══██╗" -ForegroundColor Cyan
+    Write-Host "███████║██║   ██║██████╔╝██║   ██║██████╔╝███████║" -ForegroundColor Cyan
+    Write-Host "██╔══██║██║   ██║██╔══██╗██║   ██║██╔══██╗██╔══██║" -ForegroundColor Cyan
+    Write-Host "██║  ██║╚██████╔╝██║  ██║╚██████╔╝██║  ██║██║  ██║" -ForegroundColor Cyan
+    Write-Host "╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝" -ForegroundColor Cyan
+    Write-Host "" -ForegroundColor Cyan
+    Write-Host "     ███████╗██╗  ██╗███████╗██╗     ██╗      " -ForegroundColor Cyan
+    Write-Host "     ██╔════╝██║  ██║██╔════╝██║     ██║      " -ForegroundColor Cyan
+    Write-Host "     ███████╗███████║█████╗  ██║     ██║      " -ForegroundColor Cyan
+    Write-Host "     ╚════██║██╔══██║██╔══╝  ██║     ██║      " -ForegroundColor Cyan
+    Write-Host "     ███████║██║  ██║███████╗███████╗███████╗ " -ForegroundColor Cyan
+    Write-Host "     ╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝" -ForegroundColor Cyan
+    Write-Host "📅 $((Get-Date).ToShortDateString()) | 🔋 $Battery | 🧠 CPU: $Cpu% | 💽 ${Disk}GB Free" -ForegroundColor Cyan
     Write-Host "--------------------------------------" -ForegroundColor Cyan
 }
 
 function aurora {
-    param([string]`$Command)
+    param([string]$Command)
     
-    switch (`$Command) {
+    switch ($Command) {
         'lock' { 
             Clear-Host
             Show-AuroraLock
             Show-AuroraDisplay
         }
         'pass' {
-            `$op = Read-Host -AsSecureString 'Current Pass'
-            `$BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR(`$op)
-            `$CurrentInput = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto(`$BSTR)
+            $op = Read-Host -AsSecureString 'Current Pass'
+            $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($op)
+            $CurrentInput = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
             
-            if (`$CurrentInput -eq `$CORRECT_PASSWORD) {
-                `$np = Read-Host -AsSecureString 'New Pass'
-                `$BSTR2 = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR(`$np)
-                `$NewInput = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto(`$BSTR2)
+            if ($CurrentInput -eq $CORRECT_PASSWORD) {
+                $np = Read-Host -AsSecureString 'New Pass'
+                $BSTR2 = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($np)
+                $NewInput = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR2)
                 
-                (Get-Content '$InstallPath\aurora_theme.ps1') -replace 'CORRECT_PASSWORD = \".*\"', \"CORRECT_PASSWORD = \`\"`$NewInput\`\"\" | Set-Content '$InstallPath\aurora_theme.ps1'
-                `$global:CORRECT_PASSWORD = `$NewInput
+                $ThemePath = Join-Path $env:USERPROFILE '.aurora-shell_2theme\aurora_theme.ps1'
+                (Get-Content $ThemePath) -replace 'CORRECT_PASSWORD = ".*"', "CORRECT_PASSWORD = `"$NewInput`"" | Set-Content $ThemePath
+                $global:CORRECT_PASSWORD = $NewInput
                 Write-Host '✅ Password updated!' -ForegroundColor Green
             } else {
                 Write-Host '❌ Wrong password.' -ForegroundColor Red
             }
         }
         'update' {
-            `$verify = Read-Host -AsSecureString 'Enter password to update'
-            `$BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR(`$verify)
-            `$VerifyInput = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto(`$BSTR)
+            $verify = Read-Host -AsSecureString 'Enter password to update'
+            $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($verify)
+            $VerifyInput = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
             
-            if (`$VerifyInput -ne `$CORRECT_PASSWORD) {
+            if ($VerifyInput -ne $CORRECT_PASSWORD) {
                 Write-Host '❌ Incorrect password. Update cancelled.' -ForegroundColor Red
                 return
             }
             
             Write-Host '🔄 Updating Aurora Shell from main branch...' -ForegroundColor Magenta
-            `$TempInstaller = [System.IO.Path]::GetTempFileName() + '.ps1'
-            Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.ps1' -OutFile `$TempInstaller
-            `$env:PRESERVED_PASSWORD = `$CORRECT_PASSWORD
-            & `$TempInstaller
-            Remove-Item `$TempInstaller
+            $TempInstaller = [System.IO.Path]::GetTempFileName() + '.ps1'
+            Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.ps1' -OutFile $TempInstaller
+            $env:PRESERVED_PASSWORD = $CORRECT_PASSWORD
+            & $TempInstaller
+            Remove-Item $TempInstaller
         }
         default {
             Write-Host '🌌 Aurora Command Center' -ForegroundColor Magenta
@@ -177,9 +180,10 @@ function aurora {
 
 Show-AuroraLock
 Show-AuroraDisplay
-"@
+'@
 
-$ThemeContent | Out-File -FilePath $ThemeFile -Encoding utf8
+# Replace placeholder and write file
+$ThemeScript -replace 'PASSWORD_PLACEHOLDER', $PlainPass | Out-File -FilePath $ThemeFile -Encoding utf8
 
 # 6. LINK TO PROFILE
 if (-not (Test-Path $PROFILE)) { 

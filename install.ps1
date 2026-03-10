@@ -103,22 +103,19 @@ function Show-AuroraDisplay {
     `$Cpu = [math]::Round((Get-Counter '\Processor(_Total)\% Processor Time' -ErrorAction SilentlyContinue).CounterSamples.CookedValue, 2)
     `$Disk = [math]::Round((Get-PSDrive C).Free / 1GB, 2)
     
-    `$Ascii = @"
- █████╗ ██╗   ██╗██████╗  ██████╗ ██████╗  █████╗ 
-██╔══██╗██║   ██║██╔══██╗██╔═══██╗██╔══██╗██╔══██╗
-███████║██║   ██║██████╔╝██║   ██║██████╔╝███████║
-██╔══██║██║   ██║██╔══██╗██║   ██║██╔══██╗██╔══██║
-██║  ██║╚██████╔╝██║  ██║╚██████╔╝██║  ██║██║  ██║
-╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝
-
-     ███████╗██╗  ██╗███████╗██╗     ██╗      
-     ██╔════╝██║  ██║██╔════╝██║     ██║      
-     ███████╗███████║█████╗  ██║     ██║      
-     ╚════██║██╔══██║██╔══╝  ██║     ██║      
-     ███████║██║  ██║███████╗███████╗███████╗ 
-     ╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝
-"@
-    Write-Host `$Ascii -ForegroundColor Cyan
+    Write-Host ' █████╗ ██╗   ██╗██████╗  ██████╗ ██████╗  █████╗ ' -ForegroundColor Cyan
+    Write-Host '██╔══██╗██║   ██║██╔══██╗██╔═══██╗██╔══██╗██╔══██╗' -ForegroundColor Cyan
+    Write-Host '███████║██║   ██║██████╔╝██║   ██║██████╔╝███████║' -ForegroundColor Cyan
+    Write-Host '██╔══██║██║   ██║██╔══██╗██║   ██║██╔══██╗██╔══██║' -ForegroundColor Cyan
+    Write-Host '██║  ██║╚██████╔╝██║  ██║╚██████╔╝██║  ██║██║  ██║' -ForegroundColor Cyan
+    Write-Host '╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝' -ForegroundColor Cyan
+    Write-Host '' -ForegroundColor Cyan
+    Write-Host '     ███████╗██╗  ██╗███████╗██╗     ██╗      ' -ForegroundColor Cyan
+    Write-Host '     ██╔════╝██║  ██║██╔════╝██║     ██║      ' -ForegroundColor Cyan
+    Write-Host '     ███████╗███████║█████╗  ██║     ██║      ' -ForegroundColor Cyan
+    Write-Host '     ╚════██║██╔══██║██╔══╝  ██║     ██║      ' -ForegroundColor Cyan
+    Write-Host '     ███████║██║  ██║███████╗███████╗███████╗ ' -ForegroundColor Cyan
+    Write-Host '     ╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝' -ForegroundColor Cyan
     Write-Host "📅 `$((Get-Date).ToShortDateString()) | 🔋 `$Battery | 🧠 CPU: `$Cpu% | 💽 `${Disk}GB Free" -ForegroundColor Cyan
     Write-Host "--------------------------------------" -ForegroundColor Cyan
 }

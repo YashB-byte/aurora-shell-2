@@ -1,36 +1,39 @@
-# --- AURORA SYSTEM INSTALLER v4.4.8 ---
-# Logic: Automated Dependencies (Winget) | Multi-Profile Sourcing | Centered ASCII
+# --- AURORA SYSTEM INSTALLER v4.5.0 ---
+# Logic: Force Winget Install | Automated Dependencies | Multi-Profile Sourcing | Centered ASCII
 
-# 0. PRE-FLIGHT: POWERSHELL & GIT CHECK
+# 0. INSTALL WINGET IF MISSING
+if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
+    Write-Host "📥 Winget missing. Installing App Installer (Winget)..." -ForegroundColor Yellow
+    $WingetPath = "$env:TEMP\Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle"
+    Invoke-WebRequest -Uri "https://github.com/microsoft/winget-cli/releases/latest/download/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle" -OutFile $WingetPath
+    Add-AppxPackage -Path $WingetPath
+    Write-Host "✅ Winget installed. Refreshing environment..." -ForegroundColor Green
+}
+
+# 1. PRE-FLIGHT: POWERSHELL & GIT CHECK
 if ($PSVersionTable.PSVersion.Major -lt 7) {
-    Write-Host "❌ PowerShell 7+ required." -ForegroundColor Red
-    if (Get-Command winget -ErrorAction SilentlyContinue) {
-        Write-Host "📥 Upgrading PowerShell via Winget..." -ForegroundColor Yellow
-        winget install Microsoft.PowerShell --silent --accept-source-agreements
-        Write-Host "✅ Restart terminal and run this installer again." -ForegroundColor Green
-        exit
-    } else {
-        Write-Host "❌ Please install PS7 manually: https://aka.ms/powershell" -ForegroundColor Red
-        exit 1
-    }
+    Write-Host "❌ PowerShell 7+ required. Upgrading via Winget..." -ForegroundColor Yellow
+    winget install Microsoft.PowerShell --silent --accept-source-agreements
+    Write-Host "✅ Restart terminal and run this installer again." -ForegroundColor Green
+    exit
 }
 
 Write-Host "🔍 Verifying Git..." -ForegroundColor Gray
 if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
     Write-Host "📥 Git missing. Invoking Winget..." -ForegroundColor Yellow
-    if (Get-Command winget -ErrorAction SilentlyContinue) {
-        winget install --id Git.Git -e --source winget --silent --accept-source-agreements --accept-package-agreements
-        Write-Host "✅ Git installed. ⚠️ RESTART terminal and re-run this script to continue." -ForegroundColor Green
-        exit
-    } else {
-        Write-Host "❌ Git required. Download: https://git-scm.com/download/win" -ForegroundColor Red
-        exit 1
+    winget install --id Git.Git -e --source winget --silent --accept-source-agreements --accept-package-agreements
+    
+    if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
+        Write-Host "❌ Winget install failed. Downloading Git directly..." -ForegroundColor Yellow
+        $gitPath = "$env:TEMP\Git-Installer.exe"
+        Invoke-WebRequest -Uri "https://github.com/git-for-windows/git/releases/download/v2.43.0.windows.1/Git-2.43.0-64-bit.exe" -OutFile $gitPath
+        Start-Process $gitPath -ArgumentList "/VERYSILENT /NORESTART" -Wait
     }
 }
 
 $InstallPath = Join-Path $HOME ".aurora-shell_2theme"
 
-# 1. CREDENTIALS
+# 2. CREDENTIALS
 if ($env:PRESERVED_PASSWORD) {
     $PlainPass = $env:PRESERVED_PASSWORD
 } else {
@@ -49,7 +52,7 @@ if ($env:PRESERVED_PASSWORD) {
     }
 }
 
-# 2. PURGE & CLONE
+# 3. PURGE & CLONE
 if (Test-Path $InstallPath) {
     Write-Host "🧹 Purging old Aurora build..." -ForegroundColor Yellow
     Remove-Item -Path $InstallPath -Recurse -Force -ErrorAction SilentlyContinue
@@ -60,7 +63,7 @@ Write-Host "📥 Cloning Aurora Shell v4.5.0..." -ForegroundColor Cyan
 $RepoPath = Join-Path $InstallPath "repo"
 git clone --progress https://github.com/YashB-byte/aurora-shell-2.git $RepoPath
 
-# 3. GENERATE THEME ENGINE (Using your exact ASCII layout)
+# 4. GENERATE THEME ENGINE
 $ThemeFile = Join-Path $InstallPath "aurora_theme.ps1"
 $ThemeScript = @'
 $CORRECT_PASSWORD = "PASSWORD_PLACEHOLDER"
@@ -117,7 +120,7 @@ Show-AuroraDisplay
 
 $ThemeScript.Replace('PASSWORD_PLACEHOLDER', $PlainPass) | Out-File -FilePath $ThemeFile -Encoding utf8
 
-# 4. MULTI-PROFILE SOURCING
+# 5. MULTI-PROFILE SOURCING
 $ProfilePaths = @($PROFILE.CurrentUserCurrentHost, $PROFILE.CurrentUserAllHosts)
 foreach ($P in $ProfilePaths) {
     if ($P) {
@@ -132,7 +135,7 @@ foreach ($P in $ProfilePaths) {
     }
 }
 
-# 5. FINAL PERMISSIONS
+# 6. FINAL PERMISSIONS
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
 Write-Host "✨ Aurora v4.5.0 Installed!" -ForegroundColor Green
 Write-Host "🔄 Restart terminal to activate." -ForegroundColor Cyan

@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# --- AURORA SYSTEM INSTALLER (macOS/Zsh) v4.5.0 ---
-# Logic: Admin Brew -> User-Home Fallback | Optional Password | Interactive Fix
+# --- AURORA SYSTEM INSTALLER (macOS/Zsh) v4.5.2 ---
+# Logic: Admin Brew -> User-Home Fallback | Multi-Style Header | Password Lock
 
 # 1. PRE-FLIGHT: HOMEBREW PERMISSION & INSTALL LOGIC
 echo "🔍 Checking for Homebrew..."
@@ -37,9 +37,9 @@ else
     fi
 fi
 
-# 2. VERIFY DEPENDENCIES
-echo "🔍 Verifying Dependencies (Git & lolcat)..."
-dependencies=(git lolcat)
+# 2. VERIFY DEPENDENCIES (Added figlet for slant style)
+echo "🔍 Verifying Dependencies (Git, figlet, lolcat)..."
+dependencies=(git figlet lolcat)
 for dep in "${dependencies[@]}"; do
     if ! command -v "$dep" &> /dev/null; then
         echo "📥 Installing $dep..."
@@ -49,10 +49,21 @@ done
 
 INSTALL_PATH="$HOME/.aurora-shell_2theme"
 
-# 3. OPTIONAL CREDENTIALS
-echo -e "\033[35m🌌 Aurora Setup: Set your Terminal Lock Password (Leave blank for NONE)\033[0m"
-read -rs -p "Password: " NEW_PASS < /dev/tty
-echo
+# 3. STYLE SELECTION & CREDENTIALS
+if [[ -t 0 ]]; then
+    echo -e "\033[36m🎨 Choose your header style:\033[0m"
+    echo "1) Block (Classic Aurora)"
+    echo "2) Slant (Aurora-shell) with Lolcat"
+    read -p "Enter choice [1 or 2]: " style_choice
+    
+    echo -e "\n\033[35m🌌 Aurora Setup: Set your Terminal Lock Password (Leave blank for NONE)\033[0m"
+    read -rs -p "Password: " NEW_PASS < /dev/tty
+    echo
+else
+    # Default for non-interactive installer
+    style_choice="2"
+    NEW_PASS=""
+fi
 
 if [ -z "$NEW_PASS" ]; then
     echo "🔓 No password set. Skipping lock screen."
@@ -70,13 +81,13 @@ fi
 # 4. PURGE & CLONE
 [ -d "$INSTALL_PATH" ] && rm -rf "$INSTALL_PATH"
 mkdir -p "$INSTALL_PATH"
-echo "📥 Cloning Aurora Shell v4.5.0..."
+echo "📥 Cloning Aurora Shell v4.5.2..."
 git clone --progress https://github.com/YashB-byte/aurora-shell-2.git "$INSTALL_PATH/repo"
 
 # 5. GENERATE THEME ENGINE
 THEME_FILE="$INSTALL_PATH/aurora_theme.sh"
 
-# Build the Lock Function based on if a password exists
+# Build the Lock Function
 if [ -n "$PLAIN_PASS" ]; then
     LOCK_FUNC="Show-AuroraLock() {
     echo -e \"\033[35m🔐 Aurora Terminal Lock\033[0m\"
@@ -95,26 +106,12 @@ if [ -n "$PLAIN_PASS" ]; then
     done
 }"
 else
-    LOCK_FUNC="Show-AuroraLock() { :; }" # Empty function if no pass
+    LOCK_FUNC="Show-AuroraLock() { :; }"
 fi
 
-cat << EOF > "$THEME_FILE"
-#!/bin/bash
-$LOCK_FUNC
-
-Show-AuroraDisplay() {
-    if command -v pmset &> /dev/null; then
-        battery=\$(pmset -g batt | grep -Eo "\d+%" | head -1)
-    else
-        battery="N/A"
-    fi
-    cpu=\$(top -l 1 | grep "CPU usage" | awk '{print \$3}' | sed 's/%//')
-    disk=\$(df -h / | awk 'NR==2 {print \$4}')
-    window_width=\$(tput cols)
-    stats_line="📅 \$(date +'%m/%d/%y') | 🔋 \$battery | 🧠 CPU: \${cpu}% | 💽 \${disk} Free"
-    padding_val=\$(( (window_width - \${#stats_line}) / 2 ))
-    padding=\$(printf '%*s' "\$padding_val")
-    ascii="
+# Define Header ASCII
+if [ "$style_choice" == "1" ]; then
+    ASCII_CONTENT="
   █████╗ ██╗   ██╗██████╗  ██████╗ ██████╗  █████╗ 
  ██╔══██╗██║   ██║██╔══██╗██╔═══██╗██╔══██╗██╔══██╗
  ███████║██║   ██║██████╔╝██║   ██║██████╔╝███████║
@@ -128,8 +125,32 @@ Show-AuroraDisplay() {
       ╚════██║██╔══██║██╔══╝  ██║     ██║                
       ███████║██║  ██║███████╗███████╗███████╗          
       ╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝"
-    echo "\$ascii" | lolcat
+    HEADER_CMD="echo \"\$ascii\" | lolcat"
+else
+    ASCII_CONTENT="Aurora-shell"
+    HEADER_CMD="figlet -f slant \"\$ascii\" | lolcat"
+fi
+
+cat << EOF > "$THEME_FILE"
+#!/bin/bash
+$LOCK_FUNC
+
+Show-AuroraDisplay() {
+    if command -v pmset &> /dev/null; then
+        battery=\$(pmset -g batt | grep -Eo "\d+%" | head -1)
+    else
+        battery="100%"
+    fi
+    cpu=\$(top -l 1 | grep "CPU usage" | awk '{print \$3}' | sed 's/%//')
+    disk=\$(df -h / | awk 'NR==2 {print \$4}')
+    window_width=\$(tput cols)
+    stats_line="📅 \$(date +'%m/%d/%y') | 🔋 \$battery | 🧠 CPU: \${cpu}% | 💽 \${disk} Free"
+    padding_val=\$(( (window_width - \${#stats_line}) / 2 ))
+    padding=\$(printf '%*s' "\$padding_val")
+    ascii="$ASCII_CONTENT"
+    $HEADER_CMD
     echo -e "\033[36m\$padding\$stats_line\033[0m"
+    echo -e "\033[35mYash Behera ✨ ~ \$\033[0m"
 }
 
 clear
@@ -142,4 +163,4 @@ chmod +x "$THEME_FILE"
 # 6. SOURCE IN .ZSHRC
 grep -q "source $THEME_FILE" "$HOME/.zshrc" || echo -e "\n# Aurora Shell Theme\nsource $THEME_FILE" >> "$HOME/.zshrc"
 
-echo -e "\033[32m✨ Aurora v4.5.0 Installed!\033[0m"
+echo -e "\033[32m✨ Aurora v4.5.2 Installed! Restart terminal to see changes.\033[0m"

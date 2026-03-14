@@ -1,7 +1,6 @@
 name: aurora-shell builds
 permissions:
   contents: write
-  pull-requests: write
 
 on:
   push:
@@ -12,11 +11,8 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  macos-build:
+  macos-build: # macOS-build ✔
     runs-on: macos-latest
-    defaults:
-      run:
-        shell: bash
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -26,143 +22,53 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
-      
-      - name: Get Version
-        id: version
-        run: |
-          VERSION=$(grep "AURORA SYSTEM INSTALLER" install.sh | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' || echo "v4.5.2")
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
-      - name: Prepare Scripts
+      - name: Build macOS PKG
         run: |
           mkdir -p build/scripts
           cp install.sh build/scripts/postinstall
           chmod +x build/scripts/postinstall
-
-      - name: Create Component PKG
-        run: |
-          pkgbuild --scripts build/scripts \
-                   --identifier com.yashb.aurora \
-                   --version ${{ steps.version.outputs.version }} \
-                   --install-location "$HOME/Library/AuroraShell" \
-                   --nopayload \
-                   build/AuroraShell-component.pkg
-
-      - name: Create Distribution XML
-        # This config kills the disk list and forces "Install for me only"
-        run: |
-          cat > build/distribution.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <installer-gui-script minSpecVersion="1">
-              <title>Aurora Shell</title>
-              <organization>com.yashb</organization>
-              <domains enable_localSystem="false" enable_anywhere="false" enable_currentUserHome="true"/>
-              <options customize="never" require-scripts="false" rootVolumeOnly="false"/>
-              <choices-outline>
-                  <line choice="default">
-                      <line choice="com.yashb.aurora"/>
-                  </line>
-              </choices-outline>
-              <choice id="default"/>
-              <choice id="com.yashb.aurora" visible="false">
-                  <pkg-ref id="com.yashb.aurora"/>
-              </choice>
-              <pkg-ref id="com.yashb.aurora" onConclusion="none">AuroraShell-component.pkg</pkg-ref>
-          </installer-gui-script>
+          pkgbuild --scripts build/scripts --identifier com.yashb.aurora --install-location "$HOME/Library/AuroraShell" --nopayload build/component.pkg
+          cat > build/dist.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?><installer-gui-script minSpecVersion="1"><title>Aurora Shell</title><domains enable_localSystem="false" enable_anywhere="false" enable_currentUserHome="true"/><options customize="never" require-scripts="false" rootVolumeOnly="false"/><choices-outline><line choice="default"><line choice="com.yashb.aurora"/></line></choices-outline><choice id="default"/><choice id="com.yashb.aurora" visible="false"><pkg-ref id="com.yashb.aurora"/></choice><pkg-ref id="com.yashb.aurora" onConclusion="none">component.pkg</pkg-ref></installer-gui-script>
           EOF
-
-      - name: Create Final PKG
-        run: |
-          productbuild --distribution build/distribution.xml \
-                       --package-path build \
-                       --version ${{ steps.version.outputs.version }} \
-                       AuroraShell.pkg
-
-      - name: Create DMG
-        run: |
-          mkdir -p dmg-contents
-          cp AuroraShell.pkg dmg-contents/
-          hdiutil create -volname "Aurora Shell" -srcfolder dmg-contents -ov -format UDZO AuroraShell-macOS.dmg
-
+          productbuild --distribution build/dist.xml --package-path build AuroraShell.pkg
+          hdiutil create -volname "Aurora Shell" -srcfolder AuroraShell.pkg -ov -format UDZO AuroraShell-macOS.dmg
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: AuroraShell-macOS
           path: AuroraShell-macOS.dmg
 
-  windows-build:
+  windows-build: # windows-build ✔
     runs-on: windows-latest
-    defaults:
-      run:
-        shell: bash
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-      - name: Silence Node Warnings
-        run: echo "::remove-matcher owner=node::"
-      - name: Setup Node.js
-        uses: actions/setup-node@v5
-        with:
-          node-version: '24'
-      - name: Build EXE with NSIS
+      - name: Build Windows EXE
         run: |
           choco install nsis -y
-          cat > installer.nsi << 'EOF'
-          !include "MUI2.nsh"
-          Name "Aurora Shell"
-          OutFile "AuroraShell-Installer.exe"
-          InstallDir "$LOCALAPPDATA\AuroraShell"
-          RequestExecutionLevel user
-          !insertmacro MUI_PAGE_WELCOME
-          !insertmacro MUI_PAGE_DIRECTORY
-          !insertmacro MUI_PAGE_INSTFILES
-          !insertmacro MUI_PAGE_FINISH
-          !insertmacro MUI_LANGUAGE "English"
-          Section "Install"
-            SetOutPath "$INSTDIR"
-            File "install.ps1"
-            ExecWait 'powershell.exe -ExecutionPolicy Bypass -File "$INSTDIR\install.ps1"'
-          SectionEnd
-          EOF
-          "/c/Program Files (x86)/NSIS/makensis.exe" installer.nsi
+          makensis installer.nsi
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: AuroraShell-Windows
           path: AuroraShell-Installer.exe
 
-  create-pr:
+  publish-release: # waiting for approval ✔ -> creating release ✔
     needs: [macos-build, windows-build]
     runs-on: ubuntu-latest
+    environment: Production # Triggers the "waiting for approval" gate
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-      - name: Silence Node Warnings
-        run: echo "::remove-matcher owner=node::"
-      
-      - name: Download macOS Artifact
+      - name: Download Artifacts
         uses: actions/download-artifact@v4
+        with: { path: . }
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: AuroraShell-macOS
-          path: .
-      
-      - name: Download Windows Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: AuroraShell-Windows
-          path: .
-
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v7
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "build: lock installers to user home only"
-          title: "build: aurora-shell update (All Platforms)"
-          body: |
-            Automated system build for Aurora Shell.
-            - macOS: Forced User Home installation (Hides Disks).
-            - Windows: Recompiled EXE for Local App Data.
-            - Environment: Built on Node 24 with silent warnings.
-          branch: sys/build-update
-          base: main
-          delete-branch: true
+          tag_name: v4.5.2-build-${{ github.run_number }}
+          name: Aurora Shell v4.5.2
+          files: |
+            AuroraShell-macOS/AuroraShell-macOS.dmg
+            AuroraShell-Windows/AuroraShell-Installer.exe
+          generate_release_notes: true
+          make_latest: true

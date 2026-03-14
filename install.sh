@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# --- AURORA SYSTEM INSTALLER (macOS/Zsh) v4.5.2 ---
-# Logic: Admin Brew -> User-Home Fallback | Multi-Style Header | Password Lock
+# --- AURORA SYSTEM INSTALLER (macOS/Zsh) v4.5.5 ---
+# Features: Admin/Local Brew, Multi-Style Header, Personal Figlet, Pass Lock, acat (pygmentize)
 
 # 1. PRE-FLIGHT: HOMEBREW PERMISSION & INSTALL LOGIC
 echo "🔍 Checking for Homebrew..."
@@ -37,9 +37,9 @@ else
     fi
 fi
 
-# 2. VERIFY DEPENDENCIES (Added figlet for slant style)
-echo "🔍 Verifying Dependencies (Git, figlet, lolcat)..."
-dependencies=(git figlet lolcat)
+# 2. VERIFY DEPENDENCIES (Added pygments for pygmentize)
+echo "🔍 Verifying Dependencies (Git, figlet, lolcat, pygments)..."
+dependencies=(git figlet lolcat pygments)
 for dep in "${dependencies[@]}"; do
     if ! command -v "$dep" &> /dev/null; then
         echo "📥 Installing $dep..."
@@ -49,22 +49,29 @@ done
 
 INSTALL_PATH="$HOME/.aurora-shell_2theme"
 
-# 3. STYLE SELECTION & CREDENTIALS
+# 3. INTERACTIVE SETUP: STYLE, NAME & CREDENTIALS
 if [[ -t 0 ]]; then
     echo -e "\033[36m🎨 Choose your header style:\033[0m"
-    echo "1) Block (Classic Aurora)"
-    echo "2) Slant (Aurora-shell) with Lolcat"
+    echo "1) Block (Classic Aurora-Shell)"
+    echo "2) Slant (Custom Name/Personalized) with Lolcat"
     read -p "Enter choice [1 or 2]: " style_choice
     
+    if [ "$style_choice" == "2" ]; then
+        echo -e "\n\033[33m✍️  What name should appear in the header?\033[0m"
+        read -p "Name: " USER_NAME
+    fi
+
     echo -e "\n\033[35m🌌 Aurora Setup: Set your Terminal Lock Password (Leave blank for NONE)\033[0m"
     read -rs -p "Password: " NEW_PASS < /dev/tty
     echo
 else
-    # Default for non-interactive installer
+    # Non-interactive defaults
     style_choice="2"
+    USER_NAME="Aurora-Shell"
     NEW_PASS=""
 fi
 
+# Password Verification
 if [ -z "$NEW_PASS" ]; then
     echo "🔓 No password set. Skipping lock screen."
     PLAIN_PASS=""
@@ -81,7 +88,7 @@ fi
 # 4. PURGE & CLONE
 [ -d "$INSTALL_PATH" ] && rm -rf "$INSTALL_PATH"
 mkdir -p "$INSTALL_PATH"
-echo "📥 Cloning Aurora Shell v4.5.2..."
+echo "📥 Cloning Aurora Shell Repository..."
 git clone --progress https://github.com/YashB-byte/aurora-shell-2.git "$INSTALL_PATH/repo"
 
 # 5. GENERATE THEME ENGINE
@@ -109,7 +116,7 @@ else
     LOCK_FUNC="Show-AuroraLock() { :; }"
 fi
 
-# Define Header ASCII
+# Define Header Content
 if [ "$style_choice" == "1" ]; then
     ASCII_CONTENT="
   █████╗ ██╗   ██╗██████╗  ██████╗ ██████╗  █████╗ 
@@ -127,13 +134,16 @@ if [ "$style_choice" == "1" ]; then
       ╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝"
     HEADER_CMD="echo \"\$ascii\" | lolcat"
 else
-    ASCII_CONTENT="Aurora-shell"
+    ASCII_CONTENT="${USER_NAME:-Aurora-shell}"
     HEADER_CMD="figlet -f slant \"\$ascii\" | lolcat"
 fi
 
 cat << EOF > "$THEME_FILE"
 #!/bin/bash
 $LOCK_FUNC
+
+# Aurora Syntax Highlighting (Pygments)
+alias acat='pygmentize -g -O style=monokai,linenos=1'
 
 Show-AuroraDisplay() {
     if command -v pmset &> /dev/null; then
@@ -163,4 +173,5 @@ chmod +x "$THEME_FILE"
 # 6. SOURCE IN .ZSHRC
 grep -q "source $THEME_FILE" "$HOME/.zshrc" || echo -e "\n# Aurora Shell Theme\nsource $THEME_FILE" >> "$HOME/.zshrc"
 
-echo -e "\033[32m✨ Aurora v4.5.2 Installed! Restart terminal to see changes.\033[0m"
+echo -e "\n\033[32m✨ Aurora v4.5.5 Full Setup Complete!\033[0m"
+echo -e "Try '\033[33macat filename\033[0m' to see your new syntax highlighting in action."

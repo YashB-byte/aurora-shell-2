@@ -42,7 +42,6 @@ jobs:
           chmod +x pkg_root/usr/local/bin/aurora-installer
           
           # 2. Create the PKG (The professional installer box)
-          # 2. Create the PKG
           pkgbuild --root pkg_root \
                    --identifier com.aurora.shell \
                    --version 1.2.0 \
@@ -76,7 +75,6 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     environment: Production  # CRITICAL: Create 'Production' in Settings > Environments
-    environment: Production  # <--- MUST create this in GitHub Settings!
     permissions:
       contents: write
     steps:
@@ -97,9 +95,5 @@ jobs:
             - **macOS:** Open the `.dmg` and double-click the `.pkg` installer.
             
             *Tip: On macOS, right-click the .pkg and select 'Open' to bypass the developer warning.*
-            - **Windows:** Download the `.zip`, extract, and run the `.exe`.
-            - **macOS:** Open the `.dmg` and double-click the `.pkg`.
-            
-            *Note: On macOS, right-click the .pkg and select 'Open' to bypass verification.*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

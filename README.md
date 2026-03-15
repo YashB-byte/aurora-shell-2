@@ -27,7 +27,7 @@ Cross-Platform: Tailored experiences for both Mac and Windows environments.
 
 **Option 2: Command Line Install**
 ```bash
-curl -s https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.sh | bash
+bash <(curl -s https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.sh)
 ```
 run with "```-v```" at the end of command to see everything that is going on
 

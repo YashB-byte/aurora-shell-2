@@ -1,46 +1,41 @@
 #!/bin/bash
 
-# --- AURORA-SHELL MASTER INSTALLER v4.6.0 ---
-# Logic: Zsh-Native | Multi-Font Support | /dev/tty Interactive
+# --- AURORA-SHELL MASTER INSTALLER v4.6.2 ---
+# Feature: Dynamic "ANSI Shadow" Generator to match original branding
 
-# 1. PRE-FLIGHT
-echo "🔍 Checking for Homebrew..."
-if command -v brew &> /dev/null; then
-    eval "$(brew shellenv)"
-else
-    BREW_PATH="$HOME/homebrew"
-    [ ! -d "$BREW_PATH" ] && mkdir -p "$BREW_PATH" && curl -L https://github.com/Homebrew/brew/tarball/master | tar xz --strip 1 -C "$BREW_PATH"
-    eval "$($BREW_PATH/bin/brew shellenv)"
-fi
-
-echo "🔍 Verifying Dependencies (Git, figlet, lolcat, pygments)..."
-dependencies=(git figlet lolcat pygments)
-for dep in "${dependencies[@]}"; do
-    command -v "$dep" &> /dev/null || brew install "$dep"
-done
-
+# 1. SETUP PATHS
 INSTALL_PATH="$HOME/.aurora-shell"
 mkdir -p "$INSTALL_PATH"
 
-# 2. THE TYPOGRAPHY CHOICE
-echo -e "\n\033[36m🎨 Choose your Header Typography:\033[0m"
-echo "1) Standard (Retro Block)"
-echo "2) Slant    (Modern Speed)"
-read style_choice < /dev/tty
+# 2. DEPENDENCIES
+echo "🔍 Checking for figlet & lolcat..."
+command -v brew &> /dev/null || /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+eval "$(/opt/homebrew/bin/brew shellenv)" 2>/dev/null
 
-if [ "$style_choice" == "2" ]; then
-    HEADER_CMD="figlet -f slant \"\$ascii\" | lolcat"
-    echo -e "✅ \033[32mSlant Font Selected.\033[0m"
-else
-    HEADER_CMD="figlet \"\$ascii\" | lolcat"
-    echo -e "✅ \033[32mStandard Font Selected.\033[0m"
+for dep in figlet lolcat pygments git; do
+    command -v "$dep" &> /dev/null || brew install "$dep"
+done
+
+# 3. DOWNLOAD THE "ANSI SHADOW" FONT (The key to your style)
+FONT_FILE="$INSTALL_PATH/ansi_shadow.flf"
+if [ ! -f "$FONT_FILE" ]; then
+    echo "📥 Downloading Aurora Block Font..."
+    curl -s -o "$FONT_FILE" "https://raw.githubusercontent.com/xshrim/figlet-fonts/master/ANSI%20Shadow.flf"
 fi
 
-# 3. INTERACTIVE CREDENTIALS
+# 4. INTERACTIVE NAME GATHERING
+echo -e "\n\033[33m✍️  What name should appear in the Aurora header?\033[0m"
+read USER_NAME < /dev/tty
+[ -z "$USER_NAME" ] && USER_NAME="Aurora"
+
+# GENERATE THE ART USING THE DOWNLOADED FONT
+# This creates the exact "Double Line" look you have
+ASCII_CONTENT=$(figlet -d "$INSTALL_PATH" -f "ansi_shadow" "$USER_NAME")
+
 echo -e "\n\033[35m🔐 Set Terminal Lock Password (Leave blank for NONE)\033[0m"
 read -rs -p "Password: " NEW_PASS < /dev/tty && echo
 
-# 4. GENERATE THEME ENGINE (Zsh-Specific)
+# 5. GENERATE THEME ENGINE
 THEME_FILE="$INSTALL_PATH/aurora_theme.sh"
 
 if [ -n "$NEW_PASS" ]; then
@@ -68,21 +63,22 @@ cat << EOF > "$THEME_FILE"
 #!/bin/zsh
 $LOCK_FUNC
 
-# Aurora Pro Tools
 alias acat='pygmentize -g -O style=monokai,linenos=1'
 
 Show-AuroraDisplay() {
-    battery=\$(pmset -g batt | grep -Eo \"\d+%\" | head -1)
-    cpu=\$(top -l 1 | grep \"CPU usage\" | awk '{print \$3}' | sed 's/%//')
-    disk=\$(df -h / | awk 'NR==2 {print \$4}')
-    window_width=\$(tput cols)
-    stats_line=\"📅 \$(date +'%m/%d/%y') | 🔋 \$battery | 🧠 CPU: \${cpu}% | 💽 \${disk} Free\"
-    padding_val=\$(( (window_width - \${#stats_line}) / 2 ))
-    padding=\$(printf '%*s' \"\$padding_val\")
+    battery="\$(pmset -g batt | grep -Eo '[0-9]+%' | head -1)"
+    cpu="\$(top -l 1 | grep 'CPU usage' | awk '{print \$3}' | sed 's/%//')"
+    disk="\$(df -h / | awk 'NR==2 {print \$4}')"
+    window_width="\$(tput cols)"
+    stats_line="📅 \$(date +'%m/%d/%y') | 🔋 \$battery | 🧠 CPU: \${cpu}% | 💽 \${disk} Free"
     
-    ascii=\"Aurora-shell\"
-    $HEADER_CMD
-    echo -e \"\033[36m\$padding\$stats_line\033[0m\"
+    # RENDER GENERATED ART
+    echo "$ASCII_CONTENT" | lolcat
+    
+    # Stats Line
+    padding_val=\$(( (window_width - \${#stats_line}) / 2 ))
+    padding="\$(printf '%*s' \"\$padding_val\")"
+    echo -e \"\033[36m\${padding}\${stats_line}\033[0m\"
     echo -e \"\033[35mYash Behera ✨ ~ \$\033[0m\"
 }
 
@@ -91,7 +87,7 @@ Show-AuroraLock
 Show-AuroraDisplay
 EOF
 
-# 5. REPO CLONE & SOURCE
+# 6. REPO SYNC & SOURCE
 chmod +x "$THEME_FILE"
 [ -d "$INSTALL_PATH/repo" ] && rm -rf "$INSTALL_PATH/repo"
 git clone --progress https://github.com/YashB-byte/aurora-shell.git "$INSTALL_PATH/repo"
@@ -99,4 +95,4 @@ git clone --progress https://github.com/YashB-byte/aurora-shell.git "$INSTALL_PA
 sed -i '' '/aurora_theme.sh/d' "$HOME/.zshrc" 2>/dev/null
 echo "source $THEME_FILE" >> "$HOME/.zshrc"
 
-echo -e "\n\033[32m✨ aurora-shell v4.6.0 Full Setup Complete!\033[0m"
+echo -e "\n\033[32m✨ aurora-shell v4.6.2 Installed with Custom Block Art!\033[0m"

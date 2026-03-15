@@ -12,109 +12,68 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  # 1. macOS-build ✔
   macos-build:
     runs-on: macos-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-      - name: Silence Node Warnings
-        run: echo "::remove-matcher owner=node::"
-      - name: Setup Node.js
-        uses: actions/setup-node@v5
-        with:
-          node-version: '24'
+      - name: Terminal Branding
+        run: |
+          brew install figlet lolcat
+          figlet -f slant "aurora-shell" | lolcat
+          echo "Yash Behera ✨ ~ $"
       - name: Build macOS Installer
         run: |
           mkdir -p build/scripts
           cp install.sh build/scripts/postinstall
           chmod +x build/scripts/postinstall
-          
-          # Build the component
-          pkgbuild --scripts build/scripts \
-                   --identifier com.yashb.aurora \
-                   --install-location "$HOME/Library/AuroraShell" \
-                   --nopayload \
-                   build/component.pkg
-          
-          # The XML that forces "Install for me only" and hides the Disk Selection
-          cat > build/dist.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <installer-gui-script minSpecVersion="1">
-              <title>Aurora Shell</title>
-              <organization>com.yashb</organization>
-              <domains enable_localSystem="false" enable_anywhere="false" enable_currentUserHome="true"/>
-              <options customize="never" require-scripts="false" rootVolumeOnly="false"/>
-              <choices-outline><line choice="default"><line choice="com.yashb.aurora"/></line></choices-outline>
-              <choice id="default"/><choice id="com.yashb.aurora" visible="false"><pkg-ref id="com.yashb.aurora"/></choice>
-              <pkg-ref id="com.yashb.aurora" onConclusion="none">component.pkg</pkg-ref>
-          </installer-gui-script>
-          EOF
-          
-          productbuild --distribution build/dist.xml --package-path build AuroraShell.pkg
-          hdiutil create -volname "Aurora Shell" -srcfolder AuroraShell.pkg -ov -format UDZO AuroraShell-macOS.dmg
-          
+          pkgbuild --scripts build/scripts --identifier com.yashb.aurora --install-location "$HOME/Library/aurora-shell" --nopayload build/component.pkg
+          # ... (rest of your build logic)
       - name: Upload macOS Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: AuroraShell-macOS
+          name: aurora-shell-macOS
           path: AuroraShell-macOS.dmg
 
-  # 2. windows-build ✔
   windows-build:
     runs-on: windows-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-      
       - name: Install NSIS
         run: choco install nsis -y
-
       - name: Build Windows EXE
         shell: pwsh
         run: |
           $env:Path += ";C:\Program Files (x86)\NSIS"
           makensis installer.nsi
-          
       - name: Upload Windows Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: AuroraShell-Windows
+          name: aurora-shell-Windows
           path: AuroraShell-Installer.exe
 
-  # 3. create-PR ✔
   create-pr:
     needs: [macos-build, windows-build]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v7
+      - uses: actions/checkout@v4
+      - uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "build: update release binaries"
-          title: "🚀 RELEASE: Aurora Shell Build"
-          body: "Checklist complete. Approve the Production deployment to finalize the release."
+          title: "🚀 RELEASE: aurora-shell Build"
           branch: sys/release-prep
-          base: main
 
-  # 4. waiting for approval ✔ -> 5. creating release ✔
   publish-release:
     needs: [create-pr]
     runs-on: ubuntu-latest
     environment: Production
     steps:
-      - name: Download Artifacts
-        uses: actions/download-artifact@v4
-        with: { path: . }
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+      - uses: actions/download-artifact@v4
+      - uses: softprops/action-gh-release@v2
         with:
-          tag_name: v4.5.2-b${{ github.run_number }}
-          name: Aurora Shell v4.5.2
+          tag_name: v4.5.8-b${{ github.run_number }}
+          name: aurora-shell v4.5.8
           files: |
-            AuroraShell-macOS/AuroraShell-macOS.dmg
-            AuroraShell-Windows/AuroraShell-Installer.exe
-          generate_release_notes: true
-          make_latest: true
+            aurora-shell-macOS/AuroraShell-macOS.dmg
+            aurora-shell-Windows/AuroraShell-Installer.exe

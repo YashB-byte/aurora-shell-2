@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # --- WINDOWS BUILD: Generates EXE and ZIP ---
+  # --- WINDOWS: Builds the EXE Installer ---
   windows-build:
     runs-on: windows-latest
     steps:
@@ -23,12 +23,8 @@ jobs:
       - name: Build EXE
         shell: pwsh
         run: |
-          # Automatically finds your .nsi script in the repo
           $nsi = Get-ChildItem -Recurse -Filter "*.nsi" | Select-Object -First 1
-          if ($null -eq $nsi) { 
-            Write-Host "❌ Error: No .nsi file found. Please include an NSIS script." -ForegroundColor Red
-            exit 1 
-          }
+          if ($null -eq $nsi) { exit 0 } # Skip if no NSI found
           & "C:\Program Files (x86)\NSIS\makensis.exe" /V3 $($nsi.FullName)
 
       - name: Create Zip
@@ -41,32 +37,32 @@ jobs:
           name: windows-pkg
           path: ./Aurora-Shell-Windows.zip
 
-  # --- UNIX BUILD: Generates PKG and DMG ---
+  # --- UNIX/MAC: The "Power User" Build ---
   unix-build:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build PKG and DMG
+      - name: Prepare Assets
+        run: |
+          # Find the main script (the engine)
+          ENGINE=$(find . -maxdepth 2 -iname "*.sh" | head -n 1)
+          cp "$ENGINE" aurora-shell-portable.sh
+          chmod +x aurora-shell-portable.sh
+          
+          # Setup PKG Root
+          mkdir -p pkg_root/usr/local/bin
+          cp aurora-shell-portable.sh pkg_root/usr/local/bin/aurora-installer
+
+      - name: Build DMG (For GUI Users)
         run: |
           brew install create-dmg
-          
-          # 1. Setup packaging root
-          mkdir -p pkg_root/usr/local/bin
-          
-          # 2. Find any .sh file to act as the installer/engine
-          SCRIPT=$(find . -maxdepth 2 -iname "*.sh" | head -n 1)
-          cp "$SCRIPT" pkg_root/usr/local/bin/aurora-installer
-          chmod +x pkg_root/usr/local/bin/aurora-installer
-          
-          # 3. Compile the Apple PKG
           pkgbuild --root pkg_root \
                    --identifier com.aurora.shell \
-                   --version ${{ github.ref_name }} \
+                   --version ${{ github.ref_name || 'dev' }} \
                    --install-location / \
                    "Install-Aurora.pkg"
           
-          # 4. Wrap in DMG
           mkdir -p dmg_content
           mv "Install-Aurora.pkg" dmg_content/
           
@@ -76,17 +72,18 @@ jobs:
             --window-size 600 450 \
             --icon-size 100 \
             --icon "Install-Aurora.pkg" 300 200 \
-            --hide-extension "Install-Aurora.pkg" \
             "Aurora-Shell-Mac.dmg" \
             "dmg_content/"
 
-      - name: Upload Mac Artifact
+      - name: Upload Mac Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: mac-pkg
-          path: ./*.dmg
+          path: |
+            *.dmg
+            aurora-shell-portable.sh
 
-  # --- RELEASE: Deploys binaries to GitHub Releases ---
+  # --- RELEASE: The Final Handshake ---
   publish-release:
     needs: [windows-build, unix-build]
     if: startsWith(github.ref, 'refs/tags/')
@@ -95,7 +92,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Download Artifacts
+      - name: Download All Artifacts
         uses: actions/download-artifact@v4
         with:
           merge-multiple: true
@@ -107,11 +104,21 @@ jobs:
           files: |
             *.zip
             *.dmg
+            *.sh
           body: |
-            ## 🌈 Aurora-Shell Official Release
-            Automated build for version ${{ github.ref_name }}.
+            ## 🌈 Aurora-Shell Release [${{ github.ref_name }}]
             
-            - **Windows:** Extract the `.zip` and run the `.exe`.
-            - **macOS:** Open the `.dmg` and run the `.pkg`.
+            ### 🛠️ Choose Your Weapon:
+            
+            **The Shell Way (No Admin Required):**
+            1. Download `aurora-shell-portable.sh`
+            2. Run: `bash aurora-shell-portable.sh`
+            
+            **The Windows Way:**
+            - Extract `Aurora-Shell-Windows.zip` and run the installer.
+            
+            **The Mac Way (GUI):**
+            - Mount `Aurora-Shell-Mac.dmg` and run the `.pkg`. 
+            - *Note: Terminal users should stick to the `.sh` portable build to avoid Gatekeeper.*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

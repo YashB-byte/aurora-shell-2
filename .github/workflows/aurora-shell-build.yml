@@ -28,7 +28,7 @@ jobs:
           name: windows-pkg
           path: ./Aurora-Shell-Windows.zip
 
-  # --- MAC BUILD: The Final Pathing Resolution ---
+  # --- MAC BUILD: The Absolute Path Resolution ---
   unix-build:
     runs-on: macos-latest
     steps:
@@ -38,7 +38,7 @@ jobs:
         run: |
           mkdir -p scripts
           cp ./installer.sh scripts/postinstall
-          # Ensure theme is present to prevent build-stopping errors
+          # Ensure aurora_theme.sh exists to prevent build-stopping errors
           cp ./aurora_theme.sh scripts/ 2>/dev/null || touch scripts/aurora_theme.sh
           chmod +x scripts/postinstall
 
@@ -47,15 +47,15 @@ jobs:
           brew install create-dmg
           mkdir -p pkg_root
           
-          # 1. Build the sub-component
+          # 1. Component build
           pkgbuild --root pkg_root \
                    --scripts scripts \
                    --identifier com.aurora.shell.component \
                    --version "1.0.0" \
                    "Component.pkg"
 
-          # 2. THE NUCLEAR FIX: Absolute Path Injection
-          # This converts the filename into a full file:// URL for the runner disk
+          # 2. THE FIX: Absolute Path Injection
+          # Captured dynamically to satisfy macOS security/pathing
           ABS_PATH=$(pwd)
           cat <<EOF > distribution.xml
           <?xml version="1.0" encoding="utf-8"?>
@@ -77,7 +77,7 @@ jobs:
                        --package-path . \
                        "Install-Aurora.pkg"
           
-          # 4. Wrap in DMG
+          # 4. DMG Wrap
           mkdir -p dmg_content
           mv "Install-Aurora.pkg" dmg_content/
           create-dmg \

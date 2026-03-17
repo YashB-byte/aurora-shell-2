@@ -32,7 +32,7 @@ jobs:
           name: windows-pkg
           path: ./Aurora-Shell-Windows.zip
 
-  # --- MAC BUILD: User-Domain Only ---
+  # --- MAC BUILD ---
   unix-build:
     runs-on: macos-latest
     steps:
@@ -41,29 +41,27 @@ jobs:
       - name: Prepare Scripts
         run: |
           mkdir -p scripts
-          # installer.sh becomes the postinstall trigger
           cp ./installer.sh scripts/postinstall
-          # Include theme file in bundle for the local copy command in installer.sh
           cp ./aurora_theme.sh scripts/ 2>/dev/null || touch scripts/aurora_theme.sh
           chmod +x scripts/postinstall
 
       - name: Build User-Level PKG
         run: |
           brew install create-dmg
-          mkdir -p pkg_root # Payload root (can be empty since we use scripts)
+          mkdir -p pkg_root
           
-          # 1. Create the base component package
+          # 1. Build the sub-component
           pkgbuild --root pkg_root \
                    --scripts scripts \
                    --identifier com.aurora.shell.component \
                    --version ${{ github.ref_name || '1.0.0' }} \
                    "Component.pkg"
 
-          # 2. Generate Distribution XML (The currentUserDirectory=true equivalent)
+          # 2. Generate Distribution XML (Standardized URI)
           cat <<EOF > distribution.xml
           <?xml version="1.0" encoding="utf-8"?>
           <installer-gui-script minSpecVersion="1">
-              <pkg-ref id="com.aurora.shell.component" file="Component.pkg" auth="none"/>
+              <pkg-ref id="com.aurora.shell.component" file="file:./Component.pkg" auth="none"/>
               <options customize="never" require-scripts="true" hostArchitectures="x86_64,arm64"/>
               <choices-outline>
                   <line choice="default"/>
@@ -75,12 +73,13 @@ jobs:
           </installer-gui-script>
           EOF
 
-          # 3. Synthesize the final Product PKG
+          # 3. Build Product with explicit package-path mapping
+          # This '.' tells productbuild exactly where to find the 'file:./Component.pkg'
           productbuild --distribution distribution.xml \
                        --package-path . \
                        "Install-Aurora.pkg"
           
-          # 4. Wrap it in a DMG for distribution
+          # 4. Create DMG
           mkdir -p dmg_content
           mv "Install-Aurora.pkg" dmg_content/
           create-dmg \
@@ -100,7 +99,6 @@ jobs:
     needs: [windows-build, unix-build]
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
-    environment: Production
     permissions:
       contents: write
     steps:

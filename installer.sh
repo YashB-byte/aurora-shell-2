@@ -1,20 +1,20 @@
 #!/bin/bash
-# --- AURORA-SHELL BRIDGE INSTALLER ---
-INSTALL_DIR="$HOME/.aurora-shell"
 
-echo "🌈 Preparing Aurora-Shell for current user..."
-mkdir -p "$INSTALL_DIR"
+# 1. Define a log file for user troubleshooting
+LOG_FILE="$HOME/aurora_install.log"
 
-if [ -f "./aurora_theme.sh" ]; then
-    cp "./aurora_theme.sh" "$INSTALL_DIR/aurora_theme.sh"
-    chmod +x "$INSTALL_DIR/aurora_theme.sh"
-    echo "✅ Theme file placed in $INSTALL_DIR"
+echo "Starting Aurora-Shell Installation..." > "$LOG_FILE"
+
+# 2. Execute the remote install script
+# We use the exact command you provided to ensure consistency
+/bin/bash <(curl -s https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.sh) >> "$LOG_FILE" 2>&1
+
+# 3. Verify success
+if [ $? -eq 0 ]; then
+    echo "Installation completed successfully." >> "$LOG_FILE"
 else
-    echo "⚠️  Note: aurora_theme.sh not found locally, continuing to remote install..."
+    echo "Installation failed. Check the log for details." >> "$LOG_FILE"
+    exit 1
 fi
 
-# --- THE REMOTE CHAIN ---
-echo "🚀 Triggering main installation script from GitHub..."
-bash <(curl -s https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.sh)
-
-echo "✨ Done! Add 'source ~/.aurora-shell/aurora_theme.sh' to your .zshrc"
+exit 0

@@ -11,24 +11,37 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # --- WINDOWS BUILD ---
+  # --- WINDOWS BUILD: Local NSIS + Fresh install.ps1 ---
   windows-build:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build EXE
+      
+      - name: Update Local install.ps1
+        shell: pwsh
+        run: |
+          # Overwrite the outdated install.ps1 with a modern one-liner
+          # This tells PowerShell to run your latest remote bash script logic
+          $remoteScript = 'Invoke-Expression (Invoke-RestMethod "https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.sh")'
+          $remoteScript | Out-File -FilePath ./install.ps1 -Encoding utf8
+      
+      - name: Build EXE via NSIS
         run: |
           choco install nsis -y
+          # Find your .nsi and build it. 
+          # It will now pick up the 'fresh' install.ps1 we just created above.
           $nsi = Get-ChildItem -Recurse -Filter "*.nsi" | Select-Object -First 1
           & "C:\Program Files (x86)\NSIS\makensis.exe" /V3 $($nsi.FullName)
+          
       - name: Create Zip
         run: Compress-Archive -Path ./*.exe -DestinationPath ./Aurora-Shell-Windows.zip
+        
       - uses: actions/upload-artifact@v4
         with:
           name: windows-pkg
           path: ./Aurora-Shell-Windows.zip
 
-  # --- MAC BUILD: Absolute Path Resolution ---
+  # --- MAC BUILD: Absolute URI Resolution ---
   unix-build:
     runs-on: macos-latest
     steps:
@@ -37,9 +50,12 @@ jobs:
       - name: Prepare Scripts
         run: |
           mkdir -p scripts
-          cp ./installer.sh scripts/postinstall
-          # Ensure aurora_theme.sh exists or create a dummy to prevent build failure
-          cp ./aurora_theme.sh scripts/ 2>/dev/null || touch scripts/aurora_theme.sh
+          # Create the postinstall trigger for macOS
+          cat <<EOF > scripts/postinstall
+          #!/bin/bash
+          /bin/bash <(curl -s https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.sh)
+          exit 0
+          EOF
           chmod +x scripts/postinstall
 
       - name: Build User-Level PKG
@@ -47,46 +63,32 @@ jobs:
           brew install create-dmg
           mkdir -p pkg_root
           
-          # 1. Build the sub-component
+          # 1. Build component
           pkgbuild --root pkg_root \
                    --scripts scripts \
                    --identifier com.aurora.shell.component \
                    --version "1.0.0" \
                    "Component.pkg"
 
-          # 2. THE FIX: Dynamic URI Injection
-          # Using $(pwd) ensures productbuild finds the file on the runner
-          # auth="none" prevents the installer from asking for admin rights
+          # 2. THE FIX: Absolute URI Injection
+          # This stops the "No URL for pkg-ref" error from Build #243
           ABS_PATH=$(pwd)
           cat <<EOF > distribution.xml
           <?xml version="1.0" encoding="utf-8"?>
           <installer-gui-script minSpecVersion="1">
               <pkg-ref id="com.aurora.shell.component" file="file://$ABS_PATH/Component.pkg" auth="none"/>
               <options customize="never" require-scripts="true" hostArchitectures="x86_64,arm64"/>
-              <choices-outline>
-                  <line choice="default"/>
-              </choices-outline>
-              <choice id="default" visible="false">
-                  <pkg-ref id="com.aurora.shell.component"/>
-              </choice>
-              <domains enable_anywhere="false" enable_currentUserHome="true" enable_localSystem="false"/>
+              <choices-outline><line choice="default"/></choices-outline>
+              <choice id="default" visible="false"><pkg-ref id="com.aurora.shell.component"/></choice>
+              <domains enable_currentUserHome="true" />
           </installer-gui-script>
           EOF
 
-          # 3. Productbuild with explicit mapping
-          productbuild --distribution distribution.xml \
-                       --package-path . \
-                       "Install-Aurora.pkg"
-          
-          # 4. Wrap in DMG
+          # 3. Final build & DMG wrap
+          productbuild --distribution distribution.xml --package-path . "Install-Aurora.pkg"
           mkdir -p dmg_content
           mv "Install-Aurora.pkg" dmg_content/
-          create-dmg \
-            --volname "Aurora-Shell" \
-            --window-pos 200 120 \
-            --window-size 600 450 \
-            "Aurora-Shell-Mac.dmg" \
-            "dmg_content/"
+          create-dmg --volname "Aurora-Shell" "Aurora-Shell-Mac.dmg" "dmg_content/"
 
       - uses: actions/upload-artifact@v4
         with:

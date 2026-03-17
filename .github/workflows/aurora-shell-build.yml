@@ -28,7 +28,7 @@ jobs:
           name: windows-pkg
           path: ./Aurora-Shell-Windows.zip
 
-  # --- MAC BUILD: Absolute Path Resolution ---
+  # --- MAC BUILD: The Absolute Path Fix ---
   unix-build:
     runs-on: macos-latest
     steps:
@@ -38,6 +38,7 @@ jobs:
         run: |
           mkdir -p scripts
           cp ./installer.sh scripts/postinstall
+          # Ensure aurora_theme.sh exists to prevent build-stopping errors
           cp ./aurora_theme.sh scripts/ 2>/dev/null || touch scripts/aurora_theme.sh
           chmod +x scripts/postinstall
 
@@ -53,13 +54,13 @@ jobs:
                    --version "1.0.0" \
                    "Component.pkg"
 
-          # 2. THE FIX: Capture dynamic absolute path for the XML
-          # This forces productbuild to find the file on the runner's disk
-          CURRENT_DIR=$(pwd)
+          # 2. THE FIX: Absolute Path Injection
+          # Captured dynamically to satisfy macOS security and pathing requirements
+          ABS_PATH=$(pwd)
           cat <<EOF > distribution.xml
           <?xml version="1.0" encoding="utf-8"?>
           <installer-gui-script minSpecVersion="1">
-              <pkg-ref id="com.aurora.shell.component" file="file://$CURRENT_DIR/Component.pkg" auth="none"/>
+              <pkg-ref id="com.aurora.shell.component" file="file://$ABS_PATH/Component.pkg" auth="none"/>
               <options customize="never" require-scripts="true" hostArchitectures="x86_64,arm64"/>
               <choices-outline>
                   <line choice="default"/>
@@ -71,12 +72,12 @@ jobs:
           </installer-gui-script>
           EOF
 
-          # 3. Productbuild with explicit package-path
+          # 3. Productbuild with explicit package-path mapping
           productbuild --distribution distribution.xml \
                        --package-path . \
                        "Install-Aurora.pkg"
           
-          # 4. DMG Wrap
+          # 4. Wrap in DMG
           mkdir -p dmg_content
           mv "Install-Aurora.pkg" dmg_content/
           create-dmg \
@@ -99,10 +100,12 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
         with:
           merge-multiple: true
-      - uses: softprops/action-gh-release@v2
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
           files: |
             *.zip

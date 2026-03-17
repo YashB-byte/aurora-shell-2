@@ -7,23 +7,17 @@ on:
   workflow_dispatch:
 
 jobs:
-  # --- WINDOWS: Uses your repo's installer.nsi ---
+  # --- WINDOWS: NSIS -> (Your Repo's install.ps1) ---
   windows-build:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       
-      - name: Prepare Wrapper
-        shell: pwsh
-        run: |
-          # Create the wrapper that NSIS will call to run your repo's install.ps1
-          $wrapper = 'powershell.exe -ExecutionPolicy Bypass -File "$PSScriptRoot\install.ps1"'
-          $wrapper | Out-File -FilePath ./installer.ps1 -Encoding utf8
-
       - name: Build EXE via NSIS
         run: |
           choco install nsis -y
           # Points directly to the installer.nsi already in your repo root
+          # Ensure your .nsi is configured to execute 'install.ps1' directly
           & "C:\Program Files (x86)\NSIS\makensis.exe" /V3 installer.nsi
 
       - name: Create Zip
@@ -34,7 +28,7 @@ jobs:
           name: windows-pkg
           path: ./Aurora-Shell-Windows.zip
 
-  # --- MAC: Fixed Pathing for Build #243 Error ---
+  # --- MAC: Final Fix for Build #246 Error ---
   unix-build:
     runs-on: macos-latest
     steps:
@@ -43,7 +37,7 @@ jobs:
       - name: Prepare macOS Scripts
         run: |
           mkdir -p scripts pkg_root
-          # postinstall wrapper (your installer.sh logic)
+          # postinstall (your installer.sh logic)
           cat <<EOF > scripts/postinstall
           #!/bin/bash
           /bin/bash "\$2/Contents/Resources/install.sh"
@@ -59,8 +53,8 @@ jobs:
           # 1. Build Component
           pkgbuild --root pkg_root --scripts scripts --identifier com.aurora.shell.component "Component.pkg"
 
-          # 2. THE CRITICAL FIX for "No URL for pkg-ref"
-          # We use an absolute path so productbuild can find Component.pkg
+          # 2. THE PATH FIX for Builds #243 and #246
+          # Using an absolute path URI to satisfy productbuild
           ABS_PATH=$(pwd)
           cat <<EOF > distribution.xml
           <?xml version="1.0" encoding="utf-8"?>

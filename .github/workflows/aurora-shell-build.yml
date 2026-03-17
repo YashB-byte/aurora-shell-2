@@ -6,6 +6,10 @@ on:
     tags: [ 'v*' ]
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # --- WINDOWS BUILD ---
   windows-build:
@@ -24,7 +28,7 @@ jobs:
           name: windows-pkg
           path: ./Aurora-Shell-Windows.zip
 
-  # --- MAC BUILD: The 2026 Pathing Fix ---
+  # --- MAC BUILD: The Final Pathing Fix ---
   unix-build:
     runs-on: macos-latest
     steps:
@@ -42,14 +46,14 @@ jobs:
           brew install create-dmg
           mkdir -p pkg_root
           
-          # 1. Build the raw component
+          # 1. Component build
           pkgbuild --root pkg_root \
                    --scripts scripts \
                    --identifier com.aurora.shell.component \
                    --version "1.0.0" \
                    "Component.pkg"
 
-          # 2. Generate Distribution XML with explicit relative file path
+          # 2. Distribution XML with clean file reference
           cat <<EOF > distribution.xml
           <?xml version="1.0" encoding="utf-8"?>
           <installer-gui-script minSpecVersion="1">
@@ -65,8 +69,8 @@ jobs:
           </installer-gui-script>
           EOF
 
-          # 3. Use productbuild with the --package-path set to the current directory
-          # This is the secret sauce that clears the "No URL" error in macOS 26.x
+          # 3. Productbuild using explicit package-path
+          # The '.' maps the XML's "Component.pkg" to the current directory
           productbuild --distribution distribution.xml \
                        --package-path . \
                        "Install-Aurora.pkg"

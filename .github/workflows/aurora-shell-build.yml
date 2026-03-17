@@ -38,7 +38,7 @@ jobs:
         run: |
           mkdir -p scripts
           cp ./installer.sh scripts/postinstall
-          # Ensure aurora_theme.sh exists to prevent build-stopping errors
+          # Ensure theme is present to prevent build-stopping errors
           cp ./aurora_theme.sh scripts/ 2>/dev/null || touch scripts/aurora_theme.sh
           chmod +x scripts/postinstall
 
@@ -55,12 +55,12 @@ jobs:
                    "Component.pkg"
 
           # 2. THE FIX: Absolute Path Injection
-          # Captured dynamically to satisfy macOS security/pathing
-          ABS_PATH=$(pwd)
+          # Capture the runner's path and inject it as a fully-qualified URI
+          CURRENT_DIR=$(pwd)
           cat <<EOF > distribution.xml
           <?xml version="1.0" encoding="utf-8"?>
           <installer-gui-script minSpecVersion="1">
-              <pkg-ref id="com.aurora.shell.component" file="file://$ABS_PATH/Component.pkg" auth="none"/>
+              <pkg-ref id="com.aurora.shell.component" file="file://$CURRENT_DIR/Component.pkg" auth="none"/>
               <options customize="never" require-scripts="true" hostArchitectures="x86_64,arm64"/>
               <choices-outline>
                   <line choice="default"/>
@@ -72,12 +72,12 @@ jobs:
           </installer-gui-script>
           EOF
 
-          # 3. Productbuild with explicit mapping
+          # 3. Productbuild with explicit package-path mapping
           productbuild --distribution distribution.xml \
                        --package-path . \
                        "Install-Aurora.pkg"
           
-          # 4. DMG Wrap
+          # 4. Wrap in DMG
           mkdir -p dmg_content
           mv "Install-Aurora.pkg" dmg_content/
           create-dmg \

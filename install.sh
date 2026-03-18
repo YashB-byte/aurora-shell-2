@@ -16,37 +16,36 @@ fi
 [ ! -d "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting" ] && git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting"
 [ ! -d "$ZSH_CUSTOM/plugins/zsh-autosuggestions" ] && git clone https://github.com/zsh-users/zsh-autosuggestions.git "$ZSH_CUSTOM/plugins/zsh-autosuggestions"
 
-# 2. HEADER CONFIGURATION
-echo -e "\n\033[1;32m--- STEP 1: HEADER ART ---\033[0m"
-echo "1) Classic 'AURORA' Block Art"
-echo "2) Custom Name (Slant Font)"
-read -p "Selection [1-2]: " art_choice < /dev/tty
+# 2. HEADER & PROMPT (Non-Interactive Detection for Build Automation)
+# This prevents the script from hanging during the GitHub Action build
+if [ -t 0 ]; then
+    echo -e "\n\033[1;32m--- STEP 1: HEADER ART ---\033[0m"
+    read -p "Selection [1-2]: " art_choice < /dev/tty
+    if [ "$art_choice" == "2" ]; then
+        HEADER_TYPE="FIGLET"
+        read -p "✍️  Enter Header Name: " HEADER_TEXT < /dev/tty
+        [ -z "$HEADER_TEXT" ] && HEADER_TEXT="Aurora"
+    else
+        HEADER_TYPE="BLOCK"
+        HEADER_TEXT="Aurora-Shell"
+    fi
 
-if [ "$art_choice" == "2" ]; then
-    HEADER_TYPE="FIGLET"
-    read -p "✍️  Enter Header Name: " HEADER_TEXT < /dev/tty
-    [ -z "$HEADER_TEXT" ] && HEADER_TEXT="Aurora"
+    echo -e "\n\033[1;32m--- STEP 2: PROMPT STYLE ---\033[0m"
+    read -p "Selection [1-3]: " p_choice < /dev/tty
+    case $p_choice in
+        1) FINAL_ID="Aurora-Shell" ;;
+        2) FINAL_ID="$HEADER_TEXT" ;;
+        3) FINAL_ID="" ;;
+        *) FINAL_ID="Aurora-Shell" ;;
+    esac
+    read -rs -p "🔐 Set Master Password (Leave blank for none): " NEW_PASS < /dev/tty && echo
 else
+    # Defaults for Automated Builds (Build #252+)
     HEADER_TYPE="BLOCK"
     HEADER_TEXT="Aurora-Shell"
+    FINAL_ID="Aurora-Shell"
+    NEW_PASS=""
 fi
-
-# 3. PROMPT CONFIGURATION
-echo -e "\n\033[1;32m--- STEP 2: PROMPT STYLE ---\033[0m"
-echo "1) Default    (Aurora-Shell ✨ Time >)"
-echo "2) Header Sync ($HEADER_TEXT ✨ Time >)"
-echo "3) Minimalist (Time >)"
-read -p "Selection [1-3]: " p_choice < /dev/tty
-
-case $p_choice in
-    1) FINAL_ID="Aurora-Shell" ;;
-    2) FINAL_ID="$HEADER_TEXT" ;;
-    3) FINAL_ID="" ;;
-    *) FINAL_ID="Aurora-Shell" ;;
-esac
-
-# 4. SECURITY
-read -rs -p "🔐 Set Master Password (Leave blank for none): " NEW_PASS < /dev/tty && echo
 
 # Create persistent config
 cat << EOF > "$CONFIG_FILE"
@@ -68,6 +67,12 @@ cat << EOF > "$THEME_FILE"
 #!/bin/zsh
 
 source "$CONFIG_FILE"
+
+get_cpu_usage() {
+    # Real-time CPU usage for macOS
+    local cpu=\$(top -l 1 | grep "CPU usage" | awk '{print \$3}' | sed 's/%//')
+    echo "\$cpu%"
+}
 
 Show-AuroraLock() {
     [ "\$AURORA_PASS_ENABLED" = "OFF" ] || [ -z "\$AURORA_PWD" ] && return
@@ -111,7 +116,8 @@ Show-AuroraDisplay() {
     
     if [ "\$AURORA_STATS" = "ON" ]; then
         battery="\$(pmset -g batt | grep -Eo '[0-9]+%' | head -1 2>/dev/null || echo '100%')"
-        stats_line="📅 \$(date +'%m/%d/%y') | 🔋 \$battery | 🧠 Aurora Active"
+        # REAL CPU LOGIC ADDED HERE
+        stats_line="📅 \$(date +'%m/%d/%y') | 🔋 \$battery | 🧠 CPU: \$(get_cpu_usage)"
         padding_val=\$(( (window_width - \${#stats_line}) / 2 ))
         padding="\$(printf '%*s' \"\$padding_val\")"
         echo -e "\033[36m\${padding}\${stats_line}\033[0m"

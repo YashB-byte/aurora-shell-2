@@ -1,6 +1,7 @@
 #!/bin/bash
 
-# --- AURORA-SHELL MASTER v5.5.2 ---
+# --- AURORA-SHELL MASTER v5.5.8 ---
+# FULL BLOCK ART + OPTIONAL PASS + STD USER LOCK
 INSTALL_DIR="$HOME/.aurora-shell"
 CONFIG_FILE="$INSTALL_DIR/.aurora-shell_settings"
 THEME_FILE="$INSTALL_DIR/aurora_theme.sh"
@@ -8,58 +9,91 @@ ZSH_CUSTOM=${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}
 
 mkdir -p "$INSTALL_DIR"
 
-echo -e "\033[1;36m🌟 Aurora-Shell Universal Installer v5.5.2\033[0m"
+echo -e "\033[1;36m🌟 Aurora-Shell Universal Installer v5.5.8\033[0m"
 
-# --- DEPENDENCY CHECK ---
+# --- SMART SYSTEM SYNC ---
 sync_system() {
+    echo -ne "\033[1;33m🛠️  Checking Environment... \033[0m"
     if ! command -v brew &> /dev/null; then
-        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" 2>/dev/null
-        eval "$(/opt/homebrew/bin/brew shellenv)"
+        if sudo -n true 2>/dev/null; then
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+            eval "$(/opt/homebrew/bin/brew shellenv)"
+        else
+            mkdir -p "$HOME/.brew" && curl -L https://github.com/Homebrew/brew/tarball/master | tar xz --strip 1 -C "$HOME/.brew"
+            export PATH="$HOME/.brew/bin:$PATH"
+        fi
     fi
     brew install figlet lolcat 2>/dev/null
-
-    if [ -d "$HOME/.oh-my-zsh" ]; then
-        [ ! -d "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting" ] && git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting" --quiet
-        [ ! -d "$ZSH_CUSTOM/plugins/zsh-autosuggestions" ] && git clone https://github.com/zsh-users/zsh-autosuggestions.git "$ZSH_CUSTOM/plugins/zsh-autosuggestions" --quiet
-        sed -i '' 's/plugins=(/plugins=(zsh-syntax-highlighting zsh-autosuggestions /g' "$HOME/.zshrc" 2>/dev/null
-    fi
+    echo -e "\033[1;32mREADY\033[0m"
 }
 sync_system
 
 # --- CONFIGURATION WIZARD ---
 if [ -t 0 ]; then
-    echo -e "\n\033[1;32m--- STEP 1: HEADER STYLE ---\033[0m"
-    echo "1) Classic (Full Block Art)"
-    echo "2) Custom (Figlet Name)"
-    read -p "Selection [1-2]: " art_choice < /dev/tty
-    if [ "$art_choice" == "2" ]; then
-        HDR_TYPE="FIGLET"; read -p "✍️  Enter Header Name: " HDR_TEXT < /dev/tty
+    echo -e "\n\033[1;32m--- STEP 1: SECURITY LOCK ---\033[0m"
+    echo "Leave blank and press Enter for NO password."
+    read -s -p "🔐 Set Terminal Password/PIN(leave blank for none): " TERM_PW < /dev/tty
+    echo ""
+    
+    echo -e "\n\033[1;32m--- STEP 2: HEADER CHOICE ---\033[0m"
+    echo "1) The Mega-Block (Aurora-Shell Original)"
+    echo "2) Custom Text (Large Slant Font)"
+    read -p "Selection [1-2]: " choice < /dev/tty
+    
+    if [ "$choice" == "2" ]; then
+        HDR_MODE="CUSTOM"
+        read -p "✍️  Enter Header Name: " HDR_VAL < /dev/tty
     else
-        HDR_TYPE="BLOCK"; HDR_TEXT="Aurora-Shell"
+        HDR_MODE="BLOCK"
+        HDR_VAL="Aurora-Shell"
     fi
-    echo -e "\n\033[1;32m--- STEP 2: PERSONALIZATION ---\033[0m"
+
+    echo -e "\n\033[1;32m--- STEP 3: PERSONALIZATION ---\033[0m"
     read -p "🎂 Birthday (MMDD): " BDAY < /dev/tty
     read -p "🆔 Prompt Name: " P_ID < /dev/tty
     [ -z "$BDAY" ] && BDAY="0000"
     [ -z "$P_ID" ] && P_ID="Aurora-Shell"
 else
-    HDR_TYPE="BLOCK"; HDR_TEXT="Aurora-Shell"; BDAY="0000"; P_ID="Aurora-Shell"
+    TERM_PW=""; HDR_MODE="BLOCK"; HDR_VAL="Aurora-Shell"; BDAY="0000"; P_ID="Aurora-Shell"
 fi
 
 cat << EOF > "$CONFIG_FILE"
-AURORA_VER="5.5.2"
-AURORA_HEADER_TYPE="$HDR_TYPE"
-AURORA_HEADER_TEXT="$HDR_TEXT"
+AURORA_VER="5.5.8"
+AURORA_PW="$TERM_PW"
+AURORA_HDR_MODE="$HDR_MODE"
+AURORA_HDR_VAL="$HDR_VAL"
 AURORA_USER_BDAY="$BDAY"
 AURORA_ID="$P_ID"
 EOF
 
-# --- GENERATE THEME ENGINE ---
+# --- THEME ENGINE ---
 cat << 'EOF' > "$THEME_FILE"
 #!/bin/zsh
 SETTING_PATH="$HOME/.aurora-shell/.aurora-shell_settings"
 [ ! -f "$SETTING_PATH" ] && return
 source "$SETTING_PATH"
+
+# --- OPTIONAL VAULT ---
+authenticate_user() {
+    # If password is empty string, skip authentication
+    if [[ -z "$AURORA_PW" ]]; then
+        return
+    fi
+
+    clear
+    echo -e "\033[1;31m╔════════════════════════════════════════╗\033[0m"
+    echo -e "\033[1;31m║       AURORA SECURITY TERMINAL         ║\033[0m"
+    echo -e "\033[1;31m╚════════════════════════════════════════╝\033[0m"
+    echo -ne "\033[1;33m🔑 Enter Access Key: \033[0m"
+    read -s input_pw
+    echo ""
+    
+    if [[ "$input_pw" != "$AURORA_PW" ]]; then
+        echo -e "\n\033[1;41m ACCESS DENIED \033[0m"
+        sleep 1
+        authenticate_user
+    fi
+}
 
 get_motd() {
     local today=$(date +%m%d)
@@ -74,7 +108,8 @@ get_motd() {
 Show-AuroraDisplay() {
     source "$HOME/.aurora-shell/.aurora-shell_settings"
     window_width="$(tput cols)"
-    if [ "$AURORA_HEADER_TYPE" = "BLOCK" ]; then
+    
+    if [ "$AURORA_HDR_MODE" = "BLOCK" ]; then
         echo " 
  █████╗ ██╗   ██╗██████╗  ██████╗ ██████╗  █████╗  
 ██╔══██╗██║   ██║██╔══██╗██╔═══██╗██╔══██╗██╔══██╗ 
@@ -90,7 +125,7 @@ Show-AuroraDisplay() {
       ███████║██║  ██║███████╗███████╗███████╗     
       ╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝" | lolcat
     else
-        figlet -f slant "$AURORA_HEADER_TEXT" | lolcat
+        figlet -f slant "$AURORA_HDR_VAL" | lolcat
     fi
     
     battery="$(pmset -g batt | grep -Eo '[0-9]+%' | head -1 2>/dev/null || echo '100%')"
@@ -108,19 +143,30 @@ Show-AuroraDisplay() {
 }
 
 shell.aurora() {
+    if [[ -z "$1" ]]; then
+        echo -e "\n\033[1;35m--- Aurora Help Center ---\033[0m"
+        echo -e "1) --display   : Refresh Header"
+        echo -e "2) --uninstall : Remove Shell"
+        echo -ne "\nOption [1-2]: "
+        read opt
+        case $opt in
+            1) Show-AuroraDisplay ;;
+            2) shell.aurora --uninstall ;;
+        esac
+        return
+    fi
     case "$1" in
+        --display) Show-AuroraDisplay ;;
         --uninstall)
             sed -i '' '/aurora_theme.sh/d' ~/.zshrc
             rm -rf "$HOME/.aurora-shell"
-            echo "🗑️  Uninstalled." ;;
-        *) Show-AuroraDisplay ;;
+            echo "Uninstalled." ;;
     esac
 }
 alias aurora="shell.aurora"
 
 rainbow_prompt() {
   source "$HOME/.aurora-shell/.aurora-shell_settings"
-  # PRE-EXPAND the %n and %m so the loop sees text, not tokens
   local raw_text="${AURORA_ID} %n@%m $(date +%H:%M:%S) > "
   local expanded_text=$(print -P "$raw_text")
   local colors=(196 202 226 190 82 46 48 51 45 39 27 21 57 93 129 165 201 199)
@@ -131,15 +177,15 @@ rainbow_prompt() {
   echo -n "$out"
 }
 
+# --- INITIALIZE ---
+authenticate_user
 setopt PROMPT_SUBST
 PROMPT='$(rainbow_prompt)'
-
-# Show header immediately on load
 Show-AuroraDisplay
 EOF
 
-# --- INTEGRATE ---
+# --- INTEGRATION ---
 sed -i '' '/aurora_theme.sh/d' ~/.zshrc 2>/dev/null
 echo "source $THEME_FILE" >> "$HOME/.zshrc"
 
-echo -e "\n\033[1;32m✅ v5.5.2 Fixed. Restart terminal or 'source ~/.zshrc'\033[0m"
+echo -e "\n\033[1;32m✅ v5.5.8 Deployed. Security is now user-configurable.\033[0m"

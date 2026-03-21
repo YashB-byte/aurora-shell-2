@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  # --- 1. BUILD & VERIFY ---
+  # --- 1. THE ENGINE: BUILD & VERIFY ---
   build-and-test:
     name: Build & Verify (Win/Mac)
     strategy:
@@ -19,19 +19,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      # FIX: Use a dedicated NSIS action to handle the PATH automatically
-      - name: Install NSIS & Build Windows EXE
+      # WINDOWS ONLY: Build the EXE using the correct marketplace action
+      - name: Build Windows EXE
         if: matrix.os == 'windows-latest'
-        uses: x86-64/nsis-actions@v1
+        uses: propellerhead/nsis-action@v1
         with:
-          nsi-conf: installer.nsi
+          script-file: installer.nsi
           
-      - name: Build Mac DMG (User-Level)
+      # MACOS ONLY: Build User-Level DMG (No Sudo/Admin required)
+      - name: Build Mac DMG
         if: matrix.os == 'macos-latest'
         run: |
           mkdir -p pkg_root
           cp ./install.sh pkg_root/
-          pkgbuild --root pkg_root --identifier com.aurora.shell --version "5.8.3" --install-location "$HOME/.aurora" "Install-Aurora.pkg"
+          # Install-location is set to user home to avoid password prompts
+          pkgbuild --root pkg_root --identifier com.aurora.shell --version "5.8.5" --install-location "$HOME/.aurora-shell" "Install-Aurora.pkg"
           brew install create-dmg
           mkdir dmg_content && mv "Install-Aurora.pkg" dmg_content/
           create-dmg --volname "Aurora-Shell" "Aurora-Shell-Mac.dmg" "dmg_content/"
@@ -44,12 +46,12 @@ jobs:
             *.exe
             *.dmg
 
-  # --- 2. THE AUTO-PR (Only if Dev Build Passes) ---
+  # --- 2. THE BRIDGE: AUTO-PR TO MAIN ---
   create-pull-request:
     name: Create PR to Main
     needs: build-and-test
     runs-on: ubuntu-latest
-    # This ensures the PR is only created after dev is updated and verified
+    # Only creates a PR when you push to 'dev' and the builds pass
     if: github.ref == 'refs/heads/dev'
     steps:
       - uses: actions/checkout@v4
@@ -59,28 +61,35 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: dev
           base: main
-          title: "🚀 Update Main from Dev (v5.8.3)"
-          body: "Verification complete on dev. Automatic PR for main branch update."
+          title: "🚀 Production Ready (v5.8.5)"
+          body: "Verification complete on Windows and macOS. Ready to merge into main."
 
-  # --- 3. THE RELEASE (Production Approval) ---
+  # --- 3. THE GATE: PRODUCTION RELEASE ---
   publish-release:
     name: Request Production Release
     needs: build-and-test
+    # Only triggers when you push a version tag (e.g., v5.8.5)
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
+    
+    # CRITICAL: This environment MUST have 'Required Reviewers' set in Settings
     environment: Production
+    
     permissions:
       contents: write
+      
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           merge-multiple: true
+          
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
             *.exe
             *.dmg
+          body: "🌈 Aurora-Shell Official Release v5.8.5"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

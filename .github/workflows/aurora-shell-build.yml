@@ -4,29 +4,39 @@ on:
   push:
     branches: [ main ]
     tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ] # This triggers the builds (but not the release) on every PR
   workflow_dispatch:
 
 jobs:
+  # --- TEST & BUILD PHASE ---
   windows-build:
+    name: Windows EXE Build
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build EXE
+      
+      - name: Install NSIS
         run: |
           choco install nsis -y
-          # Fix: Add NSIS to PATH so makensis is recognized in this session
-          echo "C:\Program Files (x86)\NSIS" >> $GITHUB_PATH
+          echo "C:\Program Files (x86)\NSIS" >> $env:GITHUB_PATH
+
+      - name: Build EXE
+        run: |
           makensis /V3 installer.nsi
+          
       - uses: actions/upload-artifact@v4
         with:
           name: windows-pkg
           path: ./*.exe
 
   unix-build:
+    name: Unix/macOS Build
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build Flat Package
+      
+      - name: Build DMG
         run: |
           mkdir -p scripts pkg_root
           cat <<EOF > scripts/postinstall
@@ -36,37 +46,49 @@ jobs:
           EOF
           chmod +x scripts/postinstall
           cp ./install.sh pkg_root/
-          pkgbuild --root pkg_root --scripts scripts --identifier com.aurora.shell --version "5.4.8" --install-location "/tmp/aurora-payload" "Install-Aurora.pkg"
+          
+          pkgbuild --root pkg_root --scripts scripts --identifier com.aurora.shell --version "5.7.6" --install-location "/tmp/aurora-payload" "Install-Aurora.pkg"
+          
           brew install create-dmg
           mkdir dmg_content && mv "Install-Aurora.pkg" dmg_content/
           create-dmg --volname "Aurora-Shell" "Aurora-Shell-Mac.dmg" "dmg_content/"
+          
       - uses: actions/upload-artifact@v4
         with:
           name: mac-pkg
           path: ./*.dmg
 
+  # --- RELEASE PHASE (Only runs on Tags) ---
   publish-release:
+    name: Create GitHub Release
     needs: [windows-build, unix-build]
+    # This condition ensures releases only happen on actual version tags, not PRs
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
-    environment: 'Production' 
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          
       - name: Generate Changelog
         id: changelog
         run: |
           PREV=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
-          [ -z "$PREV" ] && LOG=$(git log --oneline -n 10) || LOG=$(git log ${PREV}..HEAD --oneline)
+          if [ -z "$PREV" ]; then
+            LOG=$(git log --oneline -n 10)
+          else
+            LOG=$(git log ${PREV}..HEAD --oneline)
+          fi
           echo "log<<EOF" >> $GITHUB_OUTPUT
           echo "$LOG" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
+          
       - uses: actions/download-artifact@v4
         with:
           merge-multiple: true
+          
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
@@ -74,8 +96,7 @@ jobs:
             *.exe
             *.dmg
           body: |
-            ## 🌈 Aurora-Shell v5.4.8
-            ### 📝 Changes
+            ## 🌈 Aurora-Shell v5.7.6
             ${{ steps.changelog.outputs.log }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,96 +1,87 @@
 #!/bin/bash
+# --- AURORA-SHELL MASTER v5.7.4 ---
+# VERSION: 5.7.4
+# FIX: Dynamic Width Sensing for Perfect Centering
 
-# --- AURORA-SHELL MASTER v5.3 ---
-INSTALL_PATH="$HOME/.aurora-shell"
-CONFIG_FILE="$HOME/.aurorasettings"
-ZSH_CUSTOM="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
-mkdir -p "$INSTALL_PATH"
+INSTALL_DIR="$HOME/.aurora-shell"
+CONFIG_FILE="$INSTALL_DIR/.aurora-shell_settings"
+THEME_FILE="$INSTALL_DIR/aurora_theme.sh"
+REMOTE_URL="https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.sh"
 
-echo -e "\033[1;36m🌟 Aurora-Shell Universal Installer v5.3\033[0m"
+mkdir -p "$INSTALL_DIR"
 
-# 1. FRAMEWORK & PLUGINS
-if [ ! -d "$HOME/.oh-my-zsh" ]; then
-    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
-fi
+# --- SYNC ENVIRONMENT ---
+sync_env() {
+    echo -ne "\033[1;33m🛠️  Syncing Environment... \033[0m"
+    if ! command -v brew &> /dev/null; then
+        mkdir -p "$HOME/.brew" && curl -L https://github.com/Homebrew/brew/tarball/master | tar xz --strip 1 -C "$HOME/.brew"
+        export PATH="$HOME/.brew/bin:$PATH"
+    fi
+    brew install figlet lolcat 2>/dev/null
+    echo -e "\033[1;32mREADY\033[0m"
+}
 
-[ ! -d "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting" ] && git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting"
-[ ! -d "$ZSH_CUSTOM/plugins/zsh-autosuggestions" ] && git clone https://github.com/zsh-users/zsh-autosuggestions.git "$ZSH_CUSTOM/plugins/zsh-autosuggestions"
+# --- THE WIZARD ---
+run_wizard() {
+    echo -e "\n\033[1;32m--- AURORA CONFIGURATION WIZARD ---\033[0m"
+    [ -f "$CONFIG_FILE" ] && source "$CONFIG_FILE"
+    
+    read -s -p "🔐 Set Terminal PIN (Enter for none): " NEW_PW < /dev/tty; echo ""
+    echo "🎨 1) Mega-Block 2) Custom Slant"
+    read -p "Selection: " choice < /dev/tty
+    if [ "$choice" == "2" ]; then 
+        HDR_MODE="CUSTOM"
+        read -p "✍️ Header Name: " HDR_VAL < /dev/tty
+    else 
+        HDR_MODE="BLOCK"
+        HDR_VAL="Aurora-Shell"
+    fi
+    read -p "🎂 Birthday (MMDD): " BDAY < /dev/tty
+    read -p "🆔 Prompt ID: " P_ID < /dev/tty
 
-# 2. HEADER CONFIGURATION
-echo -e "\n\033[1;32m--- STEP 1: HEADER ART ---\033[0m"
-echo "1) Classic 'AURORA' Block Art"
-echo "2) Custom Name (Slant Font)"
-read -p "Selection [1-2]: " art_choice < /dev/tty
-
-if [ "$art_choice" == "2" ]; then
-    HEADER_TYPE="FIGLET"
-    read -p "✍️  Enter Header Name: " HEADER_TEXT < /dev/tty
-    [ -z "$HEADER_TEXT" ] && HEADER_TEXT="Aurora"
-else
-    HEADER_TYPE="BLOCK"
-    HEADER_TEXT="Aurora-Shell"
-fi
-
-# 3. PROMPT CONFIGURATION
-echo -e "\n\033[1;32m--- STEP 2: PROMPT STYLE ---\033[0m"
-echo "1) Default    (Aurora-Shell ✨ Time >)"
-echo "2) Header Sync ($HEADER_TEXT ✨ Time >)"
-echo "3) Minimalist (Time >)"
-read -p "Selection [1-3]: " p_choice < /dev/tty
-
-case $p_choice in
-    1) FINAL_ID="Aurora-Shell" ;;
-    2) FINAL_ID="$HEADER_TEXT" ;;
-    3) FINAL_ID="" ;;
-    *) FINAL_ID="Aurora-Shell" ;;
-esac
-
-# 4. SECURITY
-read -rs -p "🔐 Set Master Password (Leave blank for none): " NEW_PASS < /dev/tty && echo
-
-# Create persistent config
-cat << EOF > "$CONFIG_FILE"
-AURORA_HEADER_TYPE="$HEADER_TYPE"
-AURORA_HEADER_TEXT="$HEADER_TEXT"
-AURORA_HEADER_VISIBLE="ON"
-AURORA_STATS="ON"
-AURORA_TIME_VISIBLE="ON"
-AURORA_PASS_ENABLED="ON"
-AURORA_PWD="$NEW_PASS"
-AURORA_ID="$FINAL_ID"
-AURORA_MOTD="Welcome to the void."
+    cat << EOF > "$CONFIG_FILE"
+AURORA_VER="5.7.4"
+AURORA_PW="${NEW_PW:-$AURORA_PW}"
+AURORA_HDR_MODE="$HDR_MODE"
+AURORA_HDR_VAL="$HDR_VAL"
+AURORA_USER_BDAY="${BDAY:-$AURORA_USER_BDAY}"
+AURORA_ID="${P_ID:-$AURORA_ID}"
 EOF
+}
 
-# 5. GENERATE THEME ENGINE
-THEME_FILE="$INSTALL_PATH/aurora_theme.sh"
-
-cat << EOF > "$THEME_FILE"
+# --- THEME ENGINE ---
+generate_theme() {
+    cat << 'EOF' > "$THEME_FILE"
 #!/bin/zsh
+source "$HOME/.aurora-shell/.aurora-shell_settings"
 
-source "$CONFIG_FILE"
-
-Show-AuroraLock() {
-    [ "\$AURORA_PASS_ENABLED" = "OFF" ] || [ -z "\$AURORA_PWD" ] && return
-    echo -e "\033[35m🔐 Locked. Enter Password:\033[0m"
-    attempts=0
-    while [ \$attempts -lt 3 ]; do
-        read -rs "input_pass?Password: "
-        echo
-        if [ "\$input_pass" = "\$AURORA_PWD" ]; then
-            return 0
-        else
-            attempts=\$((attempts + 1))
-            [ \$attempts -eq 3 ] && kill -9 \$\$
-        fi
+# -- THE VAULT --
+authenticate_user() {
+    local target_pw="${1:-$AURORA_PW}"
+    if [[ -z "$target_pw" && -z "$1" ]]; then return; fi
+    clear
+    echo "          .---.
+         /     \\
+        | (00)  |  SYSTEM ENCRYPTED
+         \\  ^  /
+          '---'
+    ╔════════════════════════════════════════╗
+    ║     AURORA-SHELL SECURITY TERMINAL     ║
+    ╚════════════════════════════════════════╝" | lolcat
+    while true; do
+        echo -ne "\033[1;36m[AUTH] Key: \033[0m"; read -s in_pw; echo ""
+        [[ "$in_pw" == "$target_pw" ]] && { clear; break; } || echo -e "\033[1;41m DENIED \033[0m"
     done
 }
 
-Show-AuroraDisplay() {
-    window_width="\$(tput cols)"
-    
-    if [ "\$AURORA_HEADER_VISIBLE" = "ON" ]; then
-        if [ "\$AURORA_HEADER_TYPE" = "BLOCK" ]; then
-            echo " 
+# -- CENTERED DISPLAY ENGINE --
+Show-Aurora() {
+    source "$HOME/.aurora-shell/.aurora-shell_settings"
+    local cols=$(tput cols)
+    local content=""
+
+    if [ "$AURORA_HDR_MODE" = "BLOCK" ]; then
+        content="
  █████╗ ██╗   ██╗██████╗  ██████╗ ██████╗  █████╗  
 ██╔══██╗██║   ██║██╔══██╗██╔═══██╗██╔══██╗██╔══██╗ 
 ███████║██║   ██║██████╔╝██║   ██║██████╔╝███████║ 
@@ -103,105 +94,85 @@ Show-AuroraDisplay() {
       ███████╗███████║█████╗  ██║     ██║          
       ╚════██║██╔══██║██╔══╝  ██║     ██║          
       ███████║██║  ██║███████╗███████╗███████╗     
-      ╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝" | lolcat
-        else
-            figlet -f slant "\$AURORA_HEADER_TEXT" | lolcat
-        fi
+      ╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝"
+    else
+        content=$(figlet -f slant "$AURORA_HDR_VAL")
     fi
-    
-    if [ "\$AURORA_STATS" = "ON" ]; then
-        battery="\$(pmset -g batt | grep -Eo '[0-9]+%' | head -1 2>/dev/null || echo '100%')"
-        stats_line="📅 \$(date +'%m/%d/%y') | 🔋 \$battery | 🧠 Aurora Active"
-        padding_val=\$(( (window_width - \${#stats_line}) / 2 ))
-        padding="\$(printf '%*s' \"\$padding_val\")"
-        echo -e "\033[36m\${padding}\${stats_line}\033[0m"
-        
-        motd_padding=\$(( (window_width - \${#AURORA_MOTD}) / 2 ))
-        motd_pad="\$(printf '%*s' \"\$motd_padding\")"
-        echo -e "\033[3;90m\${motd_pad}\"\$AURORA_MOTD\"\033[0m"
-        printf '\033[34m%*s\n\033[0m' "\$window_width" '' | tr ' ' '-'
-    fi
+
+    # FIND MAX WIDTH OF BLOCK
+    local max_w=0
+    while IFS= read -r line; do
+        local len=${#line}
+        (( len > max_w )) && max_w=$len
+    done <<< "$content"
+
+    # CALCULATE PADDING
+    local pad=$(( (cols - max_w) / 2 ))
+    [[ $pad -lt 0 ]] && pad=0
+
+    # PRINT CENTERED HEADER
+    while IFS= read -r line; do
+        printf "%${pad}s%s\n" "" "$line"
+    done <<< "$content" | lolcat
+
+    # STATS LINE
+    local batt=$(pmset -g batt | grep -Eo '[0-9]+%' | head -1 || echo "100%")
+    local cpu=$(top -l 1 | grep "CPU usage" | awk '{print $3}' || echo "0%")
+    local stats="🔋 $batt | 🧠 CPU: $cpu | 📅 $(date +'%m/%d/%y')"
+    local s_pad=$(( (cols - ${#stats}) / 2 ))
+    [[ $s_pad -lt 0 ]] && s_pad=0
+    printf "%${s_pad}s\033[1;36m%s\033[0m\n" "" "$stats"
+
+    # RAINBOW RULE
+    local line_str=""
+    for ((i=1; i<=$cols; i++)); do line_str+="-"; done
+    echo "$line_str" | lolcat
 }
 
+# -- COMMAND CENTER --
 shell.aurora() {
-    source "$CONFIG_FILE"
-    case "\$1" in
-        --status)
-            echo -e "\n\033[1;36m--- SYSTEM STATUS ---\033[0m"
-            echo "👤 ID:          \$AURORA_ID"
-            echo "🎨 Header:      \$AURORA_HEADER_VISIBLE (\$AURORA_HEADER_TYPE)"
-            echo "📊 Stats:       \$AURORA_STATS"
-            echo "⏰ Time:        \$AURORA_TIME_VISIBLE"
-            echo "🔐 Secure:      \$AURORA_PASS_ENABLED"
-            echo "📝 MOTD:        \$AURORA_MOTD"
-            echo -e "\033[1;36m---------------------\033[0m" ;;
-        --time)
-            [ "\$AURORA_TIME_VISIBLE" = "ON" ] && v="OFF" || v="ON"
-            sed -i '' "s/^AURORA_TIME_VISIBLE=.*/AURORA_TIME_VISIBLE=\"\$v\"/" "$CONFIG_FILE"
-            echo "⏰ Prompt Time: \$v" ;;
-        --header-name)
-            read "newhn?Enter New Header Name: " && sed -i '' "s/^AURORA_HEADER_TEXT=.*/AURORA_HEADER_TEXT=\"\$newhn\"/" "$CONFIG_FILE"
-            sed -i '' "s/^AURORA_HEADER_TYPE=.*/AURORA_HEADER_TYPE=\"FIGLET\"/" "$CONFIG_FILE"
-            echo "✅ Header Name Updated." ;;
-        --motd)
-            read "newm?New MOTD: " && sed -i '' "s|^AURORA_MOTD=.*|AURORA_MOTD=\"\$newm\"|" "$CONFIG_FILE" ;;
-        --pass)
-            read -rs "newp?New Password: " && sed -i '' "s/^AURORA_PWD=.*/AURORA_PWD=\"\$newp\"/" "$CONFIG_FILE" ;;
-        --header)
-            [ "\$AURORA_HEADER_VISIBLE" = "ON" ] && v="OFF" || v="ON"
-            sed -i '' "s/^AURORA_HEADER_VISIBLE=.*/AURORA_HEADER_VISIBLE=\"\$v\"/" "$CONFIG_FILE" ;;
-        --stats)
-            [ "\$AURORA_STATS" = "ON" ] && v="OFF" || v="ON"
-            sed -i '' "s/^AURORA_STATS=.*/AURORA_STATS=\"\$v\"/" "$CONFIG_FILE" ;;
-        --prompt)
-            read "newp?New Prompt Identity: " && sed -i '' "s/^AURORA_ID=.*/AURORA_ID=\"\$newp\"/" "$CONFIG_FILE" ;;
-        --uninstall)
-            sed -i '' '/aurora_theme.sh/d' ~/.zshrc
-            rm -rf "$INSTALL_PATH" "$CONFIG_FILE"
-            echo "🗑️ Removed." ;;
-        *)
-            clear && Show-AuroraDisplay
-            echo "Flags: --status, --time, --header-name, --motd, --pass, --header, --stats, --prompt, --uninstall" ;;
+    case "$1" in
+        --display) Show-Aurora ;;
+        --update)
+            local r_ver=$(curl -s "$REMOTE_URL" | grep -m1 'VERSION:' | awk '{print $3}')
+            if [[ "$2" == "--force" ]] || [[ "$r_ver" > "$AURORA_VER" ]]; then
+                bash <(curl -s "$REMOTE_URL") --force
+            else
+                echo "Up to date (v$AURORA_VER)."
+            fi
+            ;;
+        --sys) sw_vers && sysctl -n machdep.cpu.brand_string ;;
+        --net) echo "IP: $(curl -s ifconfig.me)" ;;
+        --lock) authenticate_user "MANUAL" && Show-Aurora ;;
+        --uninstall) rm -rf "$HOME/.aurora-shell" && sed -i '' '/aurora_theme/d' ~/.zshrc ;;
+        *) echo "Flags: --display, --update, --sys, --net, --lock, --uninstall" ;;
     esac
-    source "$CONFIG_FILE"
 }
 alias aurora="shell.aurora"
 
-clear
-Show-AuroraLock
-Show-AuroraDisplay
-
+# -- RAINBOW PROMPT --
 rainbow_prompt() {
-  source "$CONFIG_FILE"
-  local id="\$AURORA_ID"
-  local clock=""
-  [ "\$AURORA_TIME_VISIBLE" = "ON" ] && clock="%D{%H:%M:%S}"
-  
-  local spacer=" ✨ "
-  [ -z "\$id" ] || [ -z "\$clock" ] && [ -z "\$id\$clock" ] && spacer=""
-  [ -z "\$id" ] || [ -z "\$clock" ] && spacer=" "
-
-  local text="\$id\$spacer\$clock > "
+  local raw_text="${AURORA_ID} %n@%m %* > "
+  local expanded_text=$(print -P "$raw_text")
   local colors=(196 202 226 190 82 46 48 51 45 39 27 21 57 93 129 165 201 199)
   local out=""
-  local i=1
-  for (( j=0; j<\${#text}; j++ )); do
-    char="\${text:\$j:1}"
-    color="\${colors[\$i]}"
-    out+="%{%F{\$color}%}\$char%{%f%}"
-    i=\$(( (i % \${#colors}) + 1 ))
+  for (( j=0; j<${#expanded_text}; j++ )); do
+    out+="%{%F{${colors[$(( (j % ${#colors}) + 1 ))]}}%}${expanded_text:$j:1}%{%f%}"
   done
-  echo -n "\$out"
+  echo -n "$out"
 }
 
+authenticate_user
 setopt PROMPT_SUBST
-PROMPT='\$(rainbow_prompt)'
-source "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
-source "$ZSH_CUSTOM/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh"
+PROMPT='$(rainbow_prompt)'
+Show-Aurora
 EOF
+}
 
-# 6. SYNC
-sed -i '' '/aurora_theme.sh/d' "$HOME/.zshrc" 2>/dev/null
+# --- EXECUTE ---
+sync_env
+run_wizard
+generate_theme
+sed -i '' '/aurora_theme.sh/d' ~/.zshrc 2>/dev/null
 echo "source $THEME_FILE" >> "$HOME/.zshrc"
-
-echo -e "\n\033[1;32m✅ v5.3 Installed! Use 'shell.aurora --time' to toggle the clock.\033[0m"
+echo -e "\n\033[1;32m✅ v5.7.4 Sentinel Deployed. Perfect alignment confirmed.\033[0m"

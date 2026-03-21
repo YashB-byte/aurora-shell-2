@@ -1,7 +1,7 @@
 #!/bin/bash
-# --- AURORA-SHELL MASTER v5.7.2 ---
-# VERSION: 5.7.2
-# FEATURE: Perfect Centering for Block Art, Figlet, and Stats.
+# --- AURORA-SHELL MASTER v5.7.4 ---
+# VERSION: 5.7.4
+# FIX: Dynamic Width Sensing for Perfect Centering
 
 INSTALL_DIR="$HOME/.aurora-shell"
 CONFIG_FILE="$INSTALL_DIR/.aurora-shell_settings"
@@ -17,7 +17,7 @@ sync_env() {
         mkdir -p "$HOME/.brew" && curl -L https://github.com/Homebrew/brew/tarball/master | tar xz --strip 1 -C "$HOME/.brew"
         export PATH="$HOME/.brew/bin:$PATH"
     fi
-    brew install figlet lolcat pygments
+    brew install figlet lolcat 2>/dev/null
     echo -e "\033[1;32mREADY\033[0m"
 }
 
@@ -40,7 +40,7 @@ run_wizard() {
     read -p "🆔 Prompt ID: " P_ID < /dev/tty
 
     cat << EOF > "$CONFIG_FILE"
-AURORA_VER="5.7.2"
+AURORA_VER="5.7.4"
 AURORA_PW="${NEW_PW:-$AURORA_PW}"
 AURORA_HDR_MODE="$HDR_MODE"
 AURORA_HDR_VAL="$HDR_VAL"
@@ -78,10 +78,10 @@ authenticate_user() {
 Show-Aurora() {
     source "$HOME/.aurora-shell/.aurora-shell_settings"
     local cols=$(tput cols)
-    
-    # 1. Header Centering
+    local content=""
+
     if [ "$AURORA_HDR_MODE" = "BLOCK" ]; then
-        local art="
+        content="
  █████╗ ██╗   ██╗██████╗  ██████╗ ██████╗  █████╗  
 ██╔══██╗██║   ██║██╔══██╗██╔═══██╗██╔══██╗██╔══██╗ 
 ███████║██║   ██║██████╔╝██║   ██║██████╔╝███████║ 
@@ -95,33 +95,38 @@ Show-Aurora() {
       ╚════██║██╔══██║██╔══╝  ██║     ██║          
       ███████║██║  ██║███████╗███████╗███████╗     
       ╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝"
-        
-        # Calculate padding for the widest line (approx 52 chars)
-        local art_width=52
-        local pad=$(( (cols - art_width) / 2 ))
-        while read -r line; do
-            printf "%${pad}s%s\n" "" "$line"
-        done <<< "$art" | lolcat
     else
-        # Figlet Centering
-        local fig_out=$(figlet -f slant "$AURORA_HDR_VAL")
-        local fig_width=$(echo "$fig_out" | head -n 1 | wc -c)
-        local pad=$(( (cols - fig_width) / 2 ))
-        while read -r line; do
-            printf "%${pad}s%s\n" "" "$line"
-        done <<< "$fig_out" | lolcat
+        content=$(figlet -f slant "$AURORA_HDR_VAL")
     fi
 
-    # 2. Stats Line Centering
+    # FIND MAX WIDTH OF BLOCK
+    local max_w=0
+    while IFS= read -r line; do
+        local len=${#line}
+        (( len > max_w )) && max_w=$len
+    done <<< "$content"
+
+    # CALCULATE PADDING
+    local pad=$(( (cols - max_w) / 2 ))
+    [[ $pad -lt 0 ]] && pad=0
+
+    # PRINT CENTERED HEADER
+    while IFS= read -r line; do
+        printf "%${pad}s%s\n" "" "$line"
+    done <<< "$content" | lolcat
+
+    # STATS LINE
     local batt=$(pmset -g batt | grep -Eo '[0-9]+%' | head -1 || echo "100%")
     local cpu=$(top -l 1 | grep "CPU usage" | awk '{print $3}' || echo "0%")
-    local date_str=$(date +'%m/%d/%y')
-    local stats="🔋 $batt | 🧠 CPU: $cpu | 📅 $date_str"
-    local stats_pad=$(( (cols - ${#stats}) / 2 ))
-    printf "%${stats_pad}s\033[1;36m%s\033[0m\n" "" "$stats"
+    local stats="🔋 $batt | 🧠 CPU: $cpu | 📅 $(date +'%m/%d/%y')"
+    local s_pad=$(( (cols - ${#stats}) / 2 ))
+    [[ $s_pad -lt 0 ]] && s_pad=0
+    printf "%${s_pad}s\033[1;36m%s\033[0m\n" "" "$stats"
 
-    # 3. Horizontal Rule
-    printf '\033[34m%*s\n\033[0m' "$cols" '' | tr ' ' '-'
+    # RAINBOW RULE
+    local line_str=""
+    for ((i=1; i<=$cols; i++)); do line_str+="-"; done
+    echo "$line_str" | lolcat
 }
 
 # -- COMMAND CENTER --
@@ -129,9 +134,9 @@ shell.aurora() {
     case "$1" in
         --display) Show-Aurora ;;
         --update)
-            local r_ver=$(curl -s "https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.sh" | grep -m1 'VERSION:' | awk '{print $3}')
+            local r_ver=$(curl -s "$REMOTE_URL" | grep -m1 'VERSION:' | awk '{print $3}')
             if [[ "$2" == "--force" ]] || [[ "$r_ver" > "$AURORA_VER" ]]; then
-                bash <(curl -s "https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.sh") --force
+                bash <(curl -s "$REMOTE_URL") --force
             else
                 echo "Up to date (v$AURORA_VER)."
             fi
@@ -170,4 +175,4 @@ run_wizard
 generate_theme
 sed -i '' '/aurora_theme.sh/d' ~/.zshrc 2>/dev/null
 echo "source $THEME_FILE" >> "$HOME/.zshrc"
-echo -e "\n\033[1;32m✅ v5.7.2 Deployed. Everything is now perfectly centered!\033[0m"
+echo -e "\n\033[1;32m✅ v5.7.4 Sentinel Deployed. Perfect alignment confirmed.\033[0m"

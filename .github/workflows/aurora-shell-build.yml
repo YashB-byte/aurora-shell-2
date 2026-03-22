@@ -8,7 +8,7 @@ on:
     branches: [ main ]
 
 jobs:
-  # --- 1. THE BUILD ENGINE ---
+  # --- 1. BUILD ENGINE (VERIFIED) ---
   build-and-test:
     name: Build & Verify
     strategy:
@@ -19,20 +19,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # WINDOWS: Direct path execution to avoid "command not found"
+      # WINDOWS: Uses absolute path to bypass environment variable delays
       - name: Build Windows EXE
         if: matrix.os == 'windows-latest'
         run: |
           choco install nsis -y
           & "${env:ProgramFiles(x86)}\NSIS\makensis.exe" /V3 installer.nsi
 
-      # MACOS: User-level DMG (No password required)
+      # MACOS: Build User-Level DMG
       - name: Build Mac DMG
         if: matrix.os == 'macos-latest'
         run: |
           mkdir -p pkg_root
           cp ./install.sh pkg_root/
-          pkgbuild --root pkg_root --identifier com.aurora.shell --version "5.9.1" --install-location "$HOME/.aurora-shell" "Install-Aurora.pkg"
+          pkgbuild --root pkg_root --identifier com.aurora.shell --version "5.9.8" --install-location "$HOME/.aurora-shell" "Install-Aurora.pkg"
           brew install create-dmg
           mkdir dmg_content && mv "Install-Aurora.pkg" dmg_content/
           create-dmg --volname "Aurora-Shell" "Aurora-Shell-Mac.dmg" "dmg_content/"
@@ -45,12 +45,12 @@ jobs:
             *.exe
             *.dmg
 
-  # --- 2. THE BRIDGE: AUTO-PR ---
+  # --- 2. THE BRIDGE (AUTO-PR) ---
   create-pull-request:
     name: Create PR to Main
     needs: build-and-test
     runs-on: ubuntu-latest
-    # Triggers on both dev branch pushes AND tags pushed to dev
+    # Triggers on dev push or tag push
     if: github.ref == 'refs/heads/dev' || startsWith(github.ref, 'refs/tags/v')
     steps:
       - uses: actions/checkout@v4
@@ -66,9 +66,9 @@ jobs:
           branch: dev
           base: main
           title: "🚀 Production Ready (v${{ steps.get_ver.outputs.VERSION }})"
-          body: "Verification complete for v${{ steps.get_ver.outputs.VERSION }}. Built on Windows and macOS."
+          body: "Verified by CI/CD. Ready for merge to main."
 
-  # --- 3. THE GATE: PRODUCTION RELEASE ---
+  # --- 3. THE GATE (RELEASE) ---
   publish-release:
     name: Request Production Release
     needs: build-and-test
@@ -88,6 +88,5 @@ jobs:
           files: |
             *.exe
             *.dmg
-          body: "🌈 Official Aurora-Shell Release ${{ github.ref_name }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

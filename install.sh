@@ -1,12 +1,11 @@
 #!/bin/bash
-# --- AURORA-SHELL MASTER v5.7.4 ---
-# VERSION: 5.7.4
-# FIX: Dynamic Width Sensing for Perfect Centering
+# --- AURORA-SHELL MASTER v5.7.7 ---
+# VERSION: 5.7.7
+# FIX: Sudo-aware VS Code detection & Alias fallback
 
 INSTALL_DIR="$HOME/.aurora-shell"
 CONFIG_FILE="$INSTALL_DIR/.aurora-shell_settings"
 THEME_FILE="$INSTALL_DIR/aurora_theme.sh"
-REMOTE_URL="https://raw.githubusercontent.com/YashB-byte/aurora-shell-2/main/install.sh"
 
 mkdir -p "$INSTALL_DIR"
 
@@ -40,7 +39,7 @@ run_wizard() {
     read -p "🆔 Prompt ID: " P_ID < /dev/tty
 
     cat << EOF > "$CONFIG_FILE"
-AURORA_VER="5.7.4"
+AURORA_VER="5.7.7"
 AURORA_PW="${NEW_PW:-$AURORA_PW}"
 AURORA_HDR_MODE="$HDR_MODE"
 AURORA_HDR_VAL="$HDR_VAL"
@@ -55,10 +54,18 @@ generate_theme() {
 #!/bin/zsh
 source "$HOME/.aurora-shell/.aurora-shell_settings"
 
-# -- THE VAULT --
+# -- AUTO-DETECT VS CODE BINARY --
+if ! command -v code &> /dev/null; then
+    if [ -d "/Applications/Visual Studio Code.app" ]; then
+        alias code="/Applications/Visual\ Studio\ Code.app/Contents/Resources/app/bin/code"
+    elif [ -d "/Applications/Visual Studio Code - Insiders.app" ]; then
+        alias code="/Applications/Visual\ Studio\ Code\ -\ Insiders.app/Contents/Resources/app/bin/code"
+    fi
+fi
+
 authenticate_user() {
     local target_pw="${1:-$AURORA_PW}"
-    if [[ -z "$target_pw" && -z "$1" ]]; then return; fi
+    if [[ -z "$target_pw" ]]; then return; fi
     clear
     echo "          .---.
          /     \\
@@ -74,7 +81,6 @@ authenticate_user() {
     done
 }
 
-# -- CENTERED DISPLAY ENGINE --
 Show-Aurora() {
     source "$HOME/.aurora-shell/.aurora-shell_settings"
     local cols=$(tput cols)
@@ -99,23 +105,19 @@ Show-Aurora() {
         content=$(figlet -f slant "$AURORA_HDR_VAL")
     fi
 
-    # FIND MAX WIDTH OF BLOCK
     local max_w=0
     while IFS= read -r line; do
         local len=${#line}
         (( len > max_w )) && max_w=$len
     done <<< "$content"
 
-    # CALCULATE PADDING
     local pad=$(( (cols - max_w) / 2 ))
     [[ $pad -lt 0 ]] && pad=0
 
-    # PRINT CENTERED HEADER
     while IFS= read -r line; do
         printf "%${pad}s%s\n" "" "$line"
     done <<< "$content" | lolcat
 
-    # STATS LINE
     local batt=$(pmset -g batt | grep -Eo '[0-9]+%' | head -1 || echo "100%")
     local cpu=$(top -l 1 | grep "CPU usage" | awk '{print $3}' || echo "0%")
     local stats="🔋 $batt | 🧠 CPU: $cpu | 📅 $(date +'%m/%d/%y')"
@@ -123,41 +125,29 @@ Show-Aurora() {
     [[ $s_pad -lt 0 ]] && s_pad=0
     printf "%${s_pad}s\033[1;36m%s\033[0m\n" "" "$stats"
 
-    # RAINBOW RULE
     local line_str=""
     for ((i=1; i<=$cols; i++)); do line_str+="-"; done
     echo "$line_str" | lolcat
 }
 
-# -- COMMAND CENTER --
 shell.aurora() {
     case "$1" in
         --display) Show-Aurora ;;
-        --update)
-            local r_ver=$(curl -s "$REMOTE_URL" | grep -m1 'VERSION:' | awk '{print $3}')
-            if [[ "$2" == "--force" ]] || [[ "$r_ver" > "$AURORA_VER" ]]; then
-                bash <(curl -s "$REMOTE_URL") --force
-            else
-                echo "Up to date (v$AURORA_VER)."
-            fi
-            ;;
         --sys) sw_vers && sysctl -n machdep.cpu.brand_string ;;
-        --net) echo "IP: $(curl -s ifconfig.me)" ;;
         --lock) authenticate_user "MANUAL" && Show-Aurora ;;
-        --uninstall) rm -rf "$HOME/.aurora-shell" && sed -i '' '/aurora_theme/d' ~/.zshrc ;;
-        *) echo "Flags: --display, --update, --sys, --net, --lock, --uninstall" ;;
+        --uninstall) rm -rf "$INSTALL_DIR" && sed -i '' '/aurora_theme/d' ~/.zshrc ;;
+        *) echo "Flags: --display, --sys, --lock, --uninstall" ;;
     esac
 }
 alias aurora="shell.aurora"
 
-# -- RAINBOW PROMPT --
 rainbow_prompt() {
   local raw_text="${AURORA_ID} %n@%m %* > "
   local expanded_text=$(print -P "$raw_text")
   local colors=(196 202 226 190 82 46 48 51 45 39 27 21 57 93 129 165 201 199)
   local out=""
-  for (( j=0; j<${#expanded_text}; j++ )); do
-    out+="%{%F{${colors[$(( (j % ${#colors}) + 1 ))]}}%}${expanded_text:$j:1}%{%f%}"
+  for (( j=1; j<=${#expanded_text}; j++ )); do
+    out+="%{%F{${colors[$(( (j % ${#colors}) + 1 ))]}}%}${expanded_text[j]}%{%f%}"
   done
   echo -n "$out"
 }
@@ -173,6 +163,35 @@ EOF
 sync_env
 run_wizard
 generate_theme
+
 sed -i '' '/aurora_theme.sh/d' ~/.zshrc 2>/dev/null
 echo "source $THEME_FILE" >> "$HOME/.zshrc"
-echo -e "\n\033[1;32m✅ v5.7.4 Sentinel Deployed. Perfect alignment confirmed.\033[0m"
+
+# --- VS CODE DETECTION & SUDO CHECK ---
+check_vscode() {
+    local has_vsc=false
+    local has_insider=false
+    
+    [ -d "/Applications/Visual Studio Code.app" ] && has_vsc=true
+    [ -d "/Applications/Visual Studio Code - Insiders.app" ] && has_insider=true
+
+    if [ "$has_vsc" = true ] || [ "$has_insider" = true ]; then
+        echo -e "\033[1;34m💻 VS Code environment detected.\033[0m"
+        
+        # Check if we have sudo power to install the 'code' command system-wide
+        if ! sudo -n true 2>/dev/null; then
+            echo -e "\033[1;33m⚠️  No sudo detected.\033[0m"
+        fi
+    else
+        echo -e "\n📦 VS Code not found. Download?"
+        echo "1) Yes 2) No"
+        read -p "Choice: " vsc_choice < /dev/tty
+        if [ "$vsc_choice" == "1" ]; then 
+            open "https://code.visualstudio.com/sha/download?build=stable&os=darwin-universal-dmg"
+        fi
+    fi
+}
+
+check_vscode
+
+echo -e "\n\033[1;32m✅ v5.7.7 Sentinel Deployed. Your 'code' command is ready.\033[0m"

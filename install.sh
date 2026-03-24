@@ -1,6 +1,6 @@
 #!/bin/bash
 # --- AURORA-SHELL MASTER v5.9 ---
-# FIXED: VS Code safe mode, secure auth, array syntax, dev-tools, environment
+# FIXED: VS Code safe mode, secure auth, dev-tools (POSIX), environment
 
 echo "Welcome to the Aurora-Shell installer!"
 
@@ -30,39 +30,56 @@ sync_env() {
     echo -e "\033[1;32mREADY\033[0m"
 }
 
-# --- DEV TOOLS BOOTSTRAP ---
+# --- DEV TOOLS BOOTSTRAP (NO ASSOCIATIVE ARRAYS) ---
 dev_tools_bootstrap() {
     echo -e "\n\033[1;36m--- DEV TOOLS SETUP (HYBRID MODE) ---\033[0m"
 
-    declare -A tools=(
-        ["Git"]="git"
-        ["GitHub_CLI"]="gh"
-        ["NodeJS"]="node"
-        ["Python3"]="python3"
-        ["Java"]="openjdk"
-        ["Go"]="go"
-        ["Rust"]="rustc"
-        ["Docker"]="docker"
-        ["AWS_CLI"]="aws"
-        ["Azure_CLI"]="az"
-        ["PostgreSQL"]="postgresql"
-        ["MongoDB"]="mongodb-community"
-        ["Redis"]="redis"
-        ["VSCode"]="visual-studio-code"
-        ["Rosetta"]="softwareupdate"
+    tools=(
+        "Git:git"
+        "GitHub_CLI:gh"
+        "NodeJS:node"
+        "Python3:python3"
+        "Java:openjdk"
+        "Go:go"
+        "Rust:rustc"
+        "Docker:docker"
+        "AWS_CLI:aws"
+        "Azure_CLI:az"
+        "PostgreSQL:postgresql"
+        "MongoDB:mongodb-community"
+        "Redis:redis"
+        "VSCode:visual-studio-code"
+        "Rosetta:rosetta"
     )
 
-    for t in "${!tools[@]}"; do
-        read -p "Install $t? (y/n): " ans < /dev/tty
+    for entry in "${tools[@]}"; do
+        name="${entry%%:*}"
+        formula="${entry##*:}"
+
+        read -p "Install $name? (y/n): " ans < /dev/tty
         if [[ "$ans" == "y" ]]; then
-            case "$t" in
-                "VSCode") brew install --cask visual-studio-code ;;
-                "Docker") brew install --cask docker ;;
-                "MongoDB") brew tap mongodb/brew && brew install mongodb-community ;;
-                "Redis") brew install redis ;;
-                "PostgreSQL") brew install postgresql ;;
-                "Rosetta") softwareupdate --install-rosetta --agree-to-license ;;
-                *) brew install "${tools[$t]}" ;;
+            case "$name" in
+                "VSCode")
+                    brew install --cask visual-studio-code
+                    ;;
+                "Docker")
+                    brew install --cask docker
+                    ;;
+                "MongoDB")
+                    brew tap mongodb/brew && brew install mongodb-community
+                    ;;
+                "Redis")
+                    brew install redis
+                    ;;
+                "PostgreSQL")
+                    brew install postgresql
+                    ;;
+                "Rosetta")
+                    softwareupdate --install-rosetta --agree-to-license
+                    ;;
+                *)
+                    brew install "$formula"
+                    ;;
             esac
         fi
     done

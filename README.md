@@ -1,4 +1,13 @@
-<a href="https://github.com/YashB-byte/aurora-shell" class="btn btn-primary">
+<a href="https://github.com/YashB-byte/aurora-shell" style="
+  display:inline-block;
+  padding:8px 16px;
+  background:#2da44e;
+  color:white;
+  border-radius:6px;
+  font-weight:600;
+  text-decoration:none;
+  font-family:system-ui,-apple-system,Segoe UI,Helvetica,Arial,sans-serif;
+">
   Join the Dev Beta Program
 </a>
 

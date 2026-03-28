@@ -1,6 +1,6 @@
 #!/bin/bash
-# --- AURORA-SHELL MASTER v5.8.7 ---
-# VERSION: 5.8.7
+# --- AURORA-SHELL MASTER v5.8.8 ---
+# VERSION: 5.8.8
 # FIX: Sentinel Auth Visuals + Separator + CPU/Disk Telemetry
 
 # --- PATH CONFIGURATION ---
@@ -273,5 +273,5 @@ generate_theme
 sed -i '' '/aurora-shell_theme/d' ~/.zshrc 2>/dev/null
 echo "source $THEME_FILE" >> "$HOME/.zshrc"
 
-echo -e "\n\033[1;32m✅ v5.8.7 Deployed. Security Terminal Visuals Updated.\033[0m"
+echo -e "\n\033[1;32m✅ v5.8.7 Deployed. Xcode installed.\033[0m"
 
